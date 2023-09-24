@@ -12,7 +12,11 @@ endif()
 project (RstpServer)
 include_directories(${PROJECT_SOURCE_DIR}/include/)
 
-add_executable (RstpServer "src/RstpServer.cpp" "src/main.cpp" "src/SockerHelper.cpp")
+set(CMAKE_CXX_FLAGS
+    "-std=c++17 -Wall -Werror -lpthread"
+)
+add_executable (RstpServer "src/RtspServer.cpp" "src/main.cpp" "src/SocketHelper.cpp" "src/RtspConnection.cpp" "include/RtspConnection.h" "include/Rtp.h" "src/Rtp.cpp")
+target_link_libraries(RstpServer pthread)
 
 # 将源代码添加到此项目的可执行文件。
 

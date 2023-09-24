@@ -1,17 +1,11 @@
 #include "SocketHelper.h"
-#include "LOG.h"
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <memory.h>
 
 int Close(int fd) {
 	if (close(fd) < 0) {
 		LOG_ERROR("close error\n");
 		return -1;
 	}
+	return 0;
 }
 
 int Setsockopt(int fd, int level, int optname, const void* optval, socklen_t optlen) {
@@ -19,17 +13,30 @@ int Setsockopt(int fd, int level, int optname, const void* optval, socklen_t opt
 		LOG_ERROR("setsockopt error\n");
 		return -1;
 	}
+	return 0;
 }
 
 int Freeaddrinfo(struct addrinfo* listp) {
 	freeaddrinfo(listp);
+	return 0;
 }
 
 int Getaddrinfo(const char* node, const char* service, const struct addrinfo* hints, struct addrinfo** result) {
-	if (getaddrinfo(node, service, hints, result) != 0) {
+	int ret = 0;
+	if ((ret = getaddrinfo(node, service, hints, result))!= 0) {
 		LOG_ERROR("getaddrinfo error\n");
 		return -1;
 	}
+	return ret;
+}
+
+int Accept(int listenfd, struct sockaddr* addr, socklen_t* addrlen) {
+	int connfd;
+	if ((connfd = accept(listenfd, addr, addrlen)) < 0) {
+		LOG_ERROR("accept error\n");
+		return -1;
+	}
+	return connfd;
 }
 
 int OpenListenfd(char* port) {

@@ -1,6 +1,6 @@
 #include <iostream>
 #include "LOG.h"
-#include "RstpServer.h"
+#include "RtspServer.h"
 
 
 
@@ -8,7 +8,8 @@
 int main()
 {
 
-
+	RtspServer server;
+	server.Start();
 
 	return 0;
 }
