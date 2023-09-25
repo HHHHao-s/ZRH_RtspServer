@@ -7,6 +7,9 @@
 #include <string.h>
 #include <sstream>
 #include <iostream>
+#include "Rtp.h"
+#include "H264MediaSource.h"
+
 
 
 
@@ -44,6 +47,7 @@ int RtspConnection::handlePlay() {
 		cseq_);
 	write(client_fd_, result, strlen(result));
 	LOG_INFO("%s", result);
+	playLoop();
 	return 0;
 }
 
@@ -102,6 +106,29 @@ RtspConnection::~RtspConnection()
 	if (client_fd_ > 0)
 		Close(client_fd_);
 
+}
+
+
+int RtspConnection::playLoop() {
+#ifndef ROOT_DIR
+#define ROOT_DIR "../"	
+#endif // ROOT_DIR
+
+	LOG_INFO("%s", ROOT_DIR  "/data/test.h264");
+	RtpConnection rtp_connection(this->client_fd_, ROOT_DIR  "/data/test.h264");
+	
+	while (1) {	
+		LOG_INFO("begin send");	
+		if (rtp_connection.SendFrame() == -1) {
+			
+			break;
+		}
+		LOG_INFO("begin sleep");
+		usleep(40);// 25fps
+		LOG_INFO("end sleep");
+
+	}
+	return 0;
 }
 
 void RtspConnection::run() {

@@ -1,3 +1,4 @@
+#pragma once
 class RtspConnection {
 
 public:
@@ -18,6 +19,7 @@ private:
 
 	int handleRtspRequest();
 
+	int playLoop();
 
 	int client_fd_{ 0 };
 
