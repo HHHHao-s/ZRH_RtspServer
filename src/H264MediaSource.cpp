@@ -2,93 +2,77 @@
 #include <memory>
 #include "LOG.h"
 
-static inline int startCode3(char* buf)
+static inline int startCode3(const RingBufferIterator &it)
 {
-    if (buf[0] == 0 && buf[1] == 0 && buf[2] == 1)
+    if (*it == 0 && *(it+1) == 0 && *(it + 2) == 1)
         return 1;
     else
         return 0;
 }
 
-static inline int startCode4(char* buf)
+static inline int startCode4(const RingBufferIterator& it)
 {
-    if (buf[0] == 0 && buf[1] == 0 && buf[2] == 0 && buf[3] == 1)
+    if (*it == 0 && *(it + 1) == 0 && *(it + 2) == 0 && *(it+3)==1)
         return 1;
     else
         return 0;
 }
 
-static char* findNextStartCode(char* buf, int len)
+
+
+H264MediaSource::H264MediaSource(std::string_view file_name) :file_name_(file_name), ring_buffer_(MAX_BUFFER_SIZE, file_name)
 {
-    int i;
-
-    if (len < 3)
-        return NULL;
-
-    for (i = 0; i < len - 3; ++i)
-    {
-        if (startCode3(buf) || startCode4(buf))
-            return buf;
-
-        ++buf;
-    }
-
-    if (startCode3(buf))
-        return buf;
-
-    return NULL;
-}
-
-H264MediaSource::H264MediaSource(std::string file_name) :file_name_(file_name)
-{
-	this->fp_ = fopen(file_name.c_str(), "rb");
-	if (this->fp_ == NULL) {
-		LOG_ERROR("Open file %s error\n", file_name.c_str());
-	}
-    LOG_INFO("open success");
+   
+    
+        
 }
 
 H264MediaSource::~H264MediaSource()
 {
-	if (this->fp_ != NULL) {
-		if (fclose(this->fp_) < 0) {
-			LOG_ERROR("Close file %s error\n", file_name_.c_str());
-		}
-	}
+	
 }
 
-int H264MediaSource::ReadFrame(Frame* frame) {
+std::vector<unsigned char> H264MediaSource::ReadFrame() {
 	
-    char* buf = frame->data;
-	
-	size_t n = fread(buf, 1, 1024*1024, this->fp_);
-
-    LOG_INFO("read size %d", (int)n);
-    
-    if (n < 0) {
-        LOG_ERROR("read file error");
-		return -1;
-    }
-    else if (n == 0) {
-		LOG_INFO("read file end");
-        return -1;
-    }
-
-    if (!startCode3(buf) && !startCode4(buf))
-    {
-		LOG_INFO("not start with 0x000001 or 0x00000001");
-		return -1;
-	}  
-
-    char* next_frame_begin = findNextStartCode(buf+3, n-3);
-    size_t frame_size = next_frame_begin - buf;
-    fseek(this->fp_, frame_size-n, SEEK_CUR);
-
+    auto it = ring_buffer_.begin();
     
 
-    frame->size = frame_size;
+    if (it == ring_buffer_.end()) {
+		LOG_INFO("it == ring_buffer_.end()");
+		return std::vector<unsigned char>();
+	}
 
-    return 0;
+    
+    if (startCode3(it)||  startCode4(it)) {
+        // find next start code
+        it += 3;
+        while (it != ring_buffer_.end())
+        {
+            
+            if (startCode3(it) || startCode4(it)) {
+                break;
+            }
+            ++it;
+
+        }
+        if (it == ring_buffer_.end()) {
+			LOG_INFO("it == ring_buffer_.end()");
+			return std::vector<unsigned char>();
+		}
+        else {
+
+			auto it2 = ring_buffer_.begin();
+
+			auto ret = it2.GetDataBetween(it);
+            ring_buffer_.SetOffect(it);
+            return ret;
+		}
+	}
+	else {
+		return std::vector<unsigned char>();
+	}
+		
+    
 }
 
 

@@ -49,7 +49,7 @@ public:
 
 private:
     int SendPackeyOverTcp(RtpPacket* rtpPacket, int size);
-    Frame frame_;
+
     int tcp_fd_;
     H264MediaSource h264_media_source_;
     RtpHeader rtp_header_;

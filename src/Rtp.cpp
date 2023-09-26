@@ -6,8 +6,6 @@
 RtpConnection::RtpConnection(int tcp_fd, std::string file_name):tcp_fd_(tcp_fd), h264_media_source_(file_name)
 {
 	this->alive_ = true;
-    frame_.data = (char*)malloc(1024 * 1024);
-
 	rtp_header_.csrcLen = 0;
 	rtp_header_.extension = 0;
 	rtp_header_.padding = 0;
@@ -22,30 +20,27 @@ RtpConnection::RtpConnection(int tcp_fd, std::string file_name):tcp_fd_(tcp_fd),
 
 RtpConnection::~RtpConnection()
 {
-	free(frame_.data);
-	frame_.data = NULL;
+	
 }
 
 int RtpConnection::SendFrame() {
 	
-	int ret = h264_media_source_.ReadFrame(&frame_);
-    if (ret == -1) {
+    auto frame_vec = h264_media_source_.ReadFrame();
+    int ret = 0;
+    if (frame_vec.size() == 0) {
         return -1;
     }
 
 
     uint8_t naluType; // nalu第一个字节
     int sendBytes = 0;
+    naluType = frame_vec[0];
+    LOG_INFO("frame_Size=%d \n", (int)frame_vec.size());
 
-
-    naluType = frame_.data[0];
-
-    LOG_INFO("frame_Size=%d \n", (int)frame_.size);
-
-    RtpPacket *rtpPacket = (RtpPacket *)malloc(sizeof(RtpPacket) + frame_.size);
+    RtpPacket *rtpPacket = (RtpPacket *)malloc(sizeof(RtpPacket) + frame_vec.size());
     rtpPacket->rtpHeader = rtp_header_;
 
-    if (frame_.size <= RTP_MAX_PKT_SIZE) // nalu长度小于最大包长：单一NALU单元模式
+    if (frame_vec.size() <= RTP_MAX_PKT_SIZE) // nalu长度小于最大包长：单一NALU单元模式
     {
 
         //*   0 1 2 3 4 5 6 7 8 9
@@ -53,8 +48,8 @@ int RtpConnection::SendFrame() {
         //*  |F|NRI|  Type   | a single NAL unit ... |
         //*  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-        memcpy(rtpPacket->payload, frame_.data, frame_.size);
-        ret = SendPackeyOverTcp(rtpPacket, sizeof(RtpPacket) + frame_.size);
+        memcpy(rtpPacket->payload, (void*) & frame_vec[0], frame_vec.size());
+        ret = SendPackeyOverTcp(rtpPacket, sizeof(RtpPacket) + frame_vec.size());
         if (ret < 0){
             LOG_ERROR("send error%d", ret);
             return -1;
@@ -92,8 +87,8 @@ int RtpConnection::SendFrame() {
         //*   +---------------+
 
 
-        int pktNum = frame_.size / RTP_MAX_PKT_SIZE;       // 有几个完整的包
-        int remainPktSize = frame_.size % RTP_MAX_PKT_SIZE; // 剩余不完整包的大小
+        int pktNum = frame_vec.size() / RTP_MAX_PKT_SIZE;       // 有几个完整的包
+        int remainPktSize = frame_vec.size() % RTP_MAX_PKT_SIZE; // 剩余不完整包的大小
         int i, pos = 1;
 
         // 发送完整的包
@@ -107,7 +102,7 @@ int RtpConnection::SendFrame() {
             else if (remainPktSize == 0 && i == pktNum - 1) //最后一包数据
                 rtpPacket->payload[1] |= 0x40; // end
 
-            memcpy(rtpPacket->payload + 2, frame_.data + pos, RTP_MAX_PKT_SIZE);
+            memcpy(rtpPacket->payload + 2, (void*)&frame_vec[pos], RTP_MAX_PKT_SIZE);
             ret = SendPackeyOverTcp(rtpPacket, RTP_MAX_PKT_SIZE + 2);
             if (ret < 0)
                 return -1;
@@ -124,7 +119,7 @@ int RtpConnection::SendFrame() {
             rtpPacket->payload[1] = naluType & 0x1F;
             rtpPacket->payload[1] |= 0x40; //end
 
-            memcpy(rtpPacket->payload + 2, frame_.data + pos, remainPktSize);// 不需要复制加2字节的头
+            memcpy(rtpPacket->payload + 2, (void*)&frame_vec[pos], remainPktSize);// 不需要复制加2字节的头
             ret = SendPackeyOverTcp(rtpPacket, remainPktSize + 2);
 
             if (ret < 0)

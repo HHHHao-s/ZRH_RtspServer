@@ -15,7 +15,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/)
 set(CMAKE_CXX_FLAGS
     "-std=c++17 -Wall -Werror -lpthread"
 )
-add_executable (RstpServer "src/RtspServer.cpp" "src/main.cpp" "src/SocketHelper.cpp" "src/RtspConnection.cpp" "include/RtspConnection.h" "include/Rtp.h" "src/Rtp.cpp" "include/H264MediaSource.h" "src/H264MediaSource.cpp" "include/Frame.h")
+add_executable (RstpServer "src/RtspServer.cpp" "src/main.cpp" "src/SocketHelper.cpp" "src/RtspConnection.cpp" "include/RtspConnection.h" "include/Rtp.h" "src/Rtp.cpp" "include/H264MediaSource.h" "src/H264MediaSource.cpp" "include/Frame.h" "include/RingBuffer.h" "src/RingBuffer.cpp")
 target_link_libraries(RstpServer pthread)
 add_compile_definitions(ROOT_DIR="${PROJECT_SOURCE_DIR}")
 # 将源代码添加到此项目的可执行文件。
@@ -26,3 +26,15 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
 endif()
 
 # TODO: 如有需要，请添加测试并安装目标。
+
+
+#test
+add_executable(RingBufferTest src/RingBuffer.cpp test/RingBufferTest.cpp)
+
+ 
+enable_testing()
+ 
+add_test(
+	NAME RingBufferTest 
+	COMMAND $<TARGET_FILE:RingBufferTest>#
+	)
