@@ -1,14 +1,17 @@
 #include <iostream>
-#include "LOG.h"
-#include "RtspServer.h"
-
+#include "helper/ThreadPool.h"
+#include "live/RtspServer.h"
+#include "helper/RtspContext.h"
 
 
 
 int main()
 {
 
-	RtspServer server;
+	std::shared_ptr<ThreadPool> threadPool = std::make_shared<ThreadPool>(4);
+	std::shared_ptr<RtspContext> ctx = std::make_shared<RtspContext>();
+	ctx->thread_pool_ = threadPool;
+	RtspServer server(ctx);
 	server.Start();
 
 	return 0;

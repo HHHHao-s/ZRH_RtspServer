@@ -15,7 +15,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/)
 set(CMAKE_CXX_FLAGS
     "-std=c++17 -Wall -Werror -lpthread"
 )
-add_executable (RstpServer "src/RtspServer.cpp" "src/main.cpp" "src/SocketHelper.cpp" "src/RtspConnection.cpp" "include/RtspConnection.h" "include/Rtp.h" "src/Rtp.cpp" "include/H264MediaSource.h" "src/H264MediaSource.cpp" "include/Frame.h" "include/RingBuffer.h" "src/RingBuffer.cpp")
+add_executable (RstpServer "src/live/RtspServer.cpp" "src/main.cpp" "src/helper/SocketHelper.cpp" "src/live/RtspConnection.cpp" "src/live/Rtp.cpp" "src/live/H264MediaSource.cpp" "src/helper/RingBuffer.cpp" "src/helper/ThreadPool.cpp")
 target_link_libraries(RstpServer pthread)
 add_compile_definitions(ROOT_DIR="${PROJECT_SOURCE_DIR}")
 # 将源代码添加到此项目的可执行文件。
@@ -29,9 +29,9 @@ endif()
 
 
 #test
-add_executable(RingBufferTest src/RingBuffer.cpp test/RingBufferTest.cpp)
-
- 
+add_executable(RingBufferTest "src/helper/RingBuffer.cpp" "test/RingBufferTest.cpp")
+add_executable(ThreadPoolTest  "src/helper/ThreadPool.cpp" "test/ThreadPool.cpp")
+target_link_libraries(ThreadPoolTest pthread)
 enable_testing()
  
 add_test(

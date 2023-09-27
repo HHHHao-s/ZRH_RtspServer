@@ -1,11 +1,11 @@
-﻿#include "RtspServer.h"
+﻿#include "live/RtspServer.h"
 #include <iostream>
 #include <sys/socket.h>
 #include <fcntl.h>
-#include "LOG.h"
-#include "SocketHelper.h"
+#include "helper/LOG.h"
+#include "helper/SocketHelper.h"
 #include <unistd.h>
-#include "RtspConnection.h"
+#include "live/RtspConnection.h"
 #include <thread>
 	
 
@@ -22,7 +22,7 @@ void RtspServer::Start() {
 		LOG_INFO("Accept a new connection\n");
 
 		std::thread t([=]() {
-			RtspConnection* conn = new RtspConnection(connfd);
+			RtspConnection* conn = new RtspConnection(ctx_, connfd);
 			conn->run();
 			});
 		t.detach();
@@ -32,16 +32,6 @@ void RtspServer::Start() {
 	}
 }
 
-RtspServer::RtspServer()
-{
-	this->socket_fd_ = OpenListenfd(this->port_);
-	if (this->socket_fd_ < 0) {
-		LOG_ERROR("OpenListenfd error\n");
-	}
-	
-	
-
-}
 
 RtspServer::~RtspServer()
 {

@@ -1,8 +1,10 @@
 #pragma once
+#include <memory>
+#include "helper/RtspContext.h"
 class RtspConnection {
 
 public:
-	RtspConnection(int client_fd);
+	RtspConnection(std::shared_ptr<RtspContext> ctx, int client_fd);
 	~RtspConnection();
 
 	
@@ -10,6 +12,8 @@ public:
 
 
 private:
+	std::shared_ptr<RtspContext> ctx_;
+
 	// this function is used for single thread
 	int handleOptions();
 	int handleDescribe();

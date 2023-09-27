@@ -1,7 +1,6 @@
 #pragma once
 #include <stdint.h>
 #include <string>
-#include <Frame.h>
 #include "H264MediaSource.h"
 #define RTP_MAX_PKT_SIZE 1400
 #define RTP_HEADER_SIZE 12
@@ -40,7 +39,7 @@ class RtpConnection
 {
 public:
     
-    RtpConnection(int tcp_fd , std::string file_name);
+    RtpConnection(std::shared_ptr<RtspContext> ctx, int tcp_fd , std::string file_name);
     ~RtpConnection();
 
     int SendFrame();
@@ -48,6 +47,7 @@ public:
     
 
 private:
+    std::shared_ptr<RtspContext> ctx_;
     int SendPackeyOverTcp(RtpPacket* rtpPacket, int size);
 
     int tcp_fd_;

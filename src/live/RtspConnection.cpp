@@ -1,14 +1,14 @@
-#include "RtspConnection.h"
-#include "SocketHelper.h"
+#include "live/RtspConnection.h"
+#include "helper/SocketHelper.h"
 #include <stdio.h>
 #include <unistd.h>
-#include "LOG.h"
+#include "helper/LOG.h"
 #include <time.h>
 #include <string.h>
 #include <sstream>
 #include <iostream>
-#include "Rtp.h"
-#include "H264MediaSource.h"
+#include "live/Rtp.h"
+#include "live/H264MediaSource.h"
 
 
 
@@ -95,7 +95,7 @@ int RtspConnection::handleOptions() {
 }
 
 
-RtspConnection::RtspConnection(int client_fd) : client_fd_(client_fd), alive_(true)
+RtspConnection::RtspConnection(std::shared_ptr<RtspContext> ctx, int client_fd) :ctx_(ctx), client_fd_(client_fd), alive_(true)
 {
 	//ctor
 }
@@ -115,7 +115,7 @@ int RtspConnection::playLoop() {
 #endif // ROOT_DIR
 
 	LOG_INFO("%s", ROOT_DIR  "/data/test.h264");
-	RtpConnection rtp_connection(this->client_fd_, ROOT_DIR  "/data/test.h264");
+	RtpConnection rtp_connection(ctx_, this->client_fd_, ROOT_DIR  "/data/test.h264");
 	
 	while (1) {	
 		LOG_INFO("begin send");	

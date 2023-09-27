@@ -1,9 +1,9 @@
-#include "Rtp.h"
-#include "SocketHelper.h"
-#include "LOG.h"
+#include "live/Rtp.h"
+#include "helper/SocketHelper.h"
+#include "helper/LOG.h"
 
 
-RtpConnection::RtpConnection(int tcp_fd, std::string file_name):tcp_fd_(tcp_fd), h264_media_source_(file_name)
+RtpConnection::RtpConnection(std::shared_ptr<RtspContext> ctx, int tcp_fd, std::string file_name):ctx_(ctx),tcp_fd_(tcp_fd), h264_media_source_(ctx,file_name)
 {
 	this->alive_ = true;
 	rtp_header_.csrcLen = 0;
