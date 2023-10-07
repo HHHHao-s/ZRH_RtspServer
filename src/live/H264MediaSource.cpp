@@ -126,7 +126,7 @@ void H264MediaSource::CacheFrame() {
             t->frames_.push(frame);
         }
         else {
-            LOG_INFO("frame.size() == 0");
+            //LOG_INFO("frame.size() == 0");
         }
         lock.unlock();
         // notify that the cache is not empty

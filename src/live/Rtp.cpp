@@ -35,7 +35,7 @@ int RtpConnection::SendFrame() {
     uint8_t naluType; // nalu第一个字节
     int sendBytes = 0;
     naluType = frame_vec[0];
-    LOG_INFO("frame_Size=%d \n", (int)frame_vec.size());
+    //LOG_INFO("frame_Size=%d \n", (int)frame_vec.size());
 
     RtpPacket *rtpPacket = (RtpPacket *)malloc(sizeof(RtpPacket) + frame_vec.size());
     rtpPacket->rtpHeader = rtp_header_;
@@ -107,7 +107,7 @@ int RtpConnection::SendFrame() {
             if (ret < 0)
                 return -1;
 
-            rtpPacket->rtpHeader.seq++;
+            rtp_header_.seq++;
             sendBytes += ret;
             pos += RTP_MAX_PKT_SIZE;
         }
@@ -125,14 +125,15 @@ int RtpConnection::SendFrame() {
             if (ret < 0)
                 return -1;
 
-            rtpPacket->rtpHeader.seq++;
+            rtp_header_.seq++;
             sendBytes += ret;
         }
     }
     rtp_header_.timestamp += 90000 / 25;
+    
 out:
 
-    LOG_INFO("sent bytes: %d", sendBytes);
+    //LOG_INFO("sent bytes: %d, cseq: %d", sendBytes, (int)rtp_header_.seq);
 
     return sendBytes;
 
@@ -147,7 +148,7 @@ int RtpConnection::SendPackeyOverTcp(RtpPacket* rtpPacket, int size) {
     uint32_t rtpSize = RTP_HEADER_SIZE + size;
     char* tempBuf = (char*)malloc(4 + rtpSize);
     tempBuf[0] = 0x24;//$
-    tempBuf[1] = 0x00;
+    tempBuf[1] = 0x00;// track id
     tempBuf[2] = (uint8_t)(((rtpSize) & 0xFF00) >> 8);
     tempBuf[3] = (uint8_t)((rtpSize) & 0xFF);
     memcpy(tempBuf + 4, (char*)rtpPacket, rtpSize);
@@ -160,6 +161,6 @@ int RtpConnection::SendPackeyOverTcp(RtpPacket* rtpPacket, int size) {
 
     free(tempBuf);
     tempBuf = NULL;
-    LOG_INFO("sent size:%d", ret);
+    //LOG_INFO("sent size:%d", ret);
     return ret;
 }

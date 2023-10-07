@@ -9,6 +9,7 @@
 #include <iostream>
 #include "live/Rtp.h"
 #include "live/H264MediaSource.h"
+#include "helper/Event.h"
 
 
 
@@ -47,7 +48,13 @@ int RtspConnection::handlePlay() {
 		cseq_);
 	write(client_fd_, result, strlen(result));
 	LOG_INFO("%s", result);
-	playLoop();
+
+	std::thread t([this]() {
+		this->playLoop();
+		});
+	t.detach();
+
+	
 	return 0;
 }
 
@@ -95,9 +102,16 @@ int RtspConnection::handleOptions() {
 }
 
 
-RtspConnection::RtspConnection(std::shared_ptr<RtspContext> ctx, int client_fd) :ctx_(ctx), client_fd_(client_fd), alive_(true)
+RtspConnection::RtspConnection(std::shared_ptr<RtspContext> ctx, int client_fd, RtspServer* server) :ctx_(ctx), client_fd_(client_fd), server_(server), alive_(true)
 {
-	//ctor
+	LOG_INFO("RtspConnection::RtspConnection()");
+	std::shared_ptr<IOEvent> io_event = std::make_shared<IOEvent>(client_fd_, this);
+	io_event->enableReadHandling();
+	io_event->setReadCallback(readCallback);
+
+	if (!ctx_->scheduler_->addIOEvent(io_event)) {
+		LOG_ERROR("addIOEvent error\n");
+	}
 }
 
 RtspConnection::~RtspConnection()
@@ -115,36 +129,33 @@ int RtspConnection::playLoop() {
 #endif // ROOT_DIR
 
 	LOG_INFO("%s", ROOT_DIR  "/data/test.h264");
+
+	
+
 	RtpConnection rtp_connection(ctx_, this->client_fd_, ROOT_DIR  "/data/test.h264");
 	
 	while (1) {	
-		LOG_INFO("begin send");	
+		//LOG_INFO("begin send");	
 		if (rtp_connection.SendFrame() == -1) {
 			
 			break;
 		}
-		LOG_INFO("begin sleep");
+		//LOG_INFO("begin sleep");
 		usleep(40);// 25fps
-		LOG_INFO("end sleep");
+		//LOG_INFO("end sleep");
 
 	}
 	return 0;
 }
 
-void RtspConnection::run() {
-	while (alive_) {
-		if (handleRtspRequest() < 0) {
-			alive_ = false;
-			break;
-		}
-	}
-
+void RtspConnection::readCallback(void *conn) {
+	RtspConnection* rtsp_connection = static_cast<RtspConnection*>(conn);
+	rtsp_connection->handleRtspRequest();
 }
 
 int RtspConnection::handleRtspRequest() {
 
 	std::string rbuf_str(1024, '\0');
-
 
 	int n = read(client_fd_, static_cast<void*>(const_cast<char*>(rbuf_str.c_str())), rbuf_str.size());
 
@@ -155,6 +166,8 @@ int RtspConnection::handleRtspRequest() {
 	else if (n == 0) {
 		LOG_INFO("client close");
 		alive_ = false;
+		if (disconnect_cb_)
+			disconnect_cb_(server_, client_fd_);
 		return -1;
 	}
 	else {
