@@ -1,4 +1,7 @@
 #pragma once
+#include <sys/timerfd.h>
+#include <stdint.h>
+
 typedef void (*EventCallback)(void*);
 
 class TriggerEvent {
@@ -20,9 +23,9 @@ private:
 class TimerEvent {
 public:
 
-    TimerEvent(void* arg);
+    TimerEvent(void* arg, uint64_t time_ms);
     ~TimerEvent();
-
+    int getFd() const { return time_fd_; }
     void setArg(void* arg) { arg_ = arg; }
     void setTimeoutCallback(EventCallback cb) { timeout_call_back_ = cb; }
     bool handleEvent();
@@ -30,9 +33,13 @@ public:
     void stop();
 
 private:
+    
     void* arg_;
     EventCallback timeout_call_back_;
     bool stop_;
+    uint64_t interval_ms_;
+    int time_fd_;
+    
 };
 
 class IOEvent {

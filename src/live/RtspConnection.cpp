@@ -7,7 +7,7 @@
 #include <string.h>
 #include <sstream>
 #include <iostream>
-#include "live/Rtp.h"
+
 #include "live/H264MediaSource.h"
 #include "helper/Event.h"
 
@@ -49,10 +49,12 @@ int RtspConnection::handlePlay() {
 	write(client_fd_, result, strlen(result));
 	LOG_INFO("%s", result);
 
-	std::thread t([this]() {
-		this->playLoop();
-		});
-	t.detach();
+	LOG_INFO("%s", ROOT_DIR  "/data/test.h264");
+
+
+	auto p = std::make_shared<RtpConnection>(ctx_, this->client_fd_, ROOT_DIR  "/data/test.h264");
+
+	rtp_conns_.push_back(p);
 
 	
 	return 0;
@@ -102,20 +104,23 @@ int RtspConnection::handleOptions() {
 }
 
 
-RtspConnection::RtspConnection(std::shared_ptr<RtspContext> ctx, int client_fd, RtspServer* server) :ctx_(ctx), client_fd_(client_fd), server_(server), alive_(true)
+RtspConnection::RtspConnection(RtspContext * ctx, int client_fd, RtspServer* server) :ctx_(ctx), client_fd_(client_fd), server_(server), alive_(true)
 {
 	LOG_INFO("RtspConnection::RtspConnection()");
-	std::shared_ptr<IOEvent> io_event = std::make_shared<IOEvent>(client_fd_, this);
-	io_event->enableReadHandling();
-	io_event->setReadCallback(readCallback);
+	io_event_ = std::make_shared<IOEvent>(client_fd_, this);
+	io_event_->enableReadHandling();
+	io_event_->setReadCallback(readCallback);
 
-	if (!ctx_->scheduler_->addIOEvent(io_event)) {
+	if (!ctx_->scheduler_->addIOEvent(io_event_)) {
 		LOG_ERROR("addIOEvent error\n");
 	}
 }
 
 RtspConnection::~RtspConnection()
 {
+	if (!ctx_->scheduler_->removeIOEvent(io_event_)) {
+		LOG_ERROR("addIOEvent error\n");
+	}
 	LOG_INFO("RtspConnection::~RtspConnection()");
 	if (client_fd_ > 0)
 		Close(client_fd_);
@@ -123,30 +128,30 @@ RtspConnection::~RtspConnection()
 }
 
 
-int RtspConnection::playLoop() {
-#ifndef ROOT_DIR
-#define ROOT_DIR "../"	
-#endif // ROOT_DIR
-
-	LOG_INFO("%s", ROOT_DIR  "/data/test.h264");
-
-	
-
-	RtpConnection rtp_connection(ctx_, this->client_fd_, ROOT_DIR  "/data/test.h264");
-	
-	while (1) {	
-		//LOG_INFO("begin send");	
-		if (rtp_connection.SendFrame() == -1) {
-			
-			break;
-		}
-		//LOG_INFO("begin sleep");
-		usleep(40);// 25fps
-		//LOG_INFO("end sleep");
-
-	}
-	return 0;
-}
+//int RtspConnection::playLoop() {
+//#ifndef ROOT_DIR
+//#define ROOT_DIR "../"	
+//#endif // ROOT_DIR
+//
+//	LOG_INFO("%s", ROOT_DIR  "/data/test.h264");
+//
+//	
+//
+//	RtpConnection rtp_connection(ctx_, this->client_fd_, ROOT_DIR  "/data/test.h264");
+//	
+//	while (1) {	
+//		//LOG_INFO("begin send");	
+//		if (rtp_connection.SendFrame() == -1) {
+//			
+//			break;
+//		}
+//		//LOG_INFO("begin sleep");
+//		usleep(40);// 25fps
+//		//LOG_INFO("end sleep");
+//
+//	}
+//	return 0;
+//}
 
 void RtspConnection::readCallback(void *conn) {
 	RtspConnection* rtsp_connection = static_cast<RtspConnection*>(conn);

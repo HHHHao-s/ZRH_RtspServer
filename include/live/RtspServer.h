@@ -12,7 +12,7 @@ class RtspServer
 public:
 
 
-	RtspServer(std::shared_ptr<RtspContext> ctx);
+	RtspServer(RtspContext* ctx);
 	~RtspServer();
 	static void readCb(void *rtsp_server);
 
@@ -27,7 +27,8 @@ public:
 
 private:
 	int socket_fd_;
-	std::shared_ptr<RtspContext> ctx_;
+	std::shared_ptr<IOEvent> io_event_;
+	RtspContext* ctx_;
 	
 	std::unordered_map<int, std::shared_ptr<RtspConnection>> fd2conn_;
 	

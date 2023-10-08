@@ -8,7 +8,7 @@
 
 struct RtspContext
 {
-	std::shared_ptr<ThreadPool> thread_pool_;
-	std::shared_ptr<Scheduler> scheduler_;
+	ThreadPool* thread_pool_;
+	Scheduler* scheduler_;
 
 };

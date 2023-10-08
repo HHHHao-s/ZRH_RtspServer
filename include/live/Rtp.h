@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <string>
 #include "H264MediaSource.h"
+#include "helper/Event.h"
+#include <mutex>
 #define RTP_MAX_PKT_SIZE 1400
 #define RTP_HEADER_SIZE 12
 
@@ -39,22 +41,28 @@ class RtpConnection
 {
 public:
     
-    RtpConnection(std::shared_ptr<RtspContext> ctx, int tcp_fd , std::string file_name);
+    RtpConnection(RtspContext * ctx, int tcp_fd , std::string file_name);
     ~RtpConnection();
 
+    static void TimeOutCb(void *);
+
+    int SendPackeyOverTcp(RtpPacket* rtpPacket, int size);
     int SendFrame();
 
     
 
 private:
-    std::shared_ptr<RtspContext> ctx_;
-    int SendPackeyOverTcp(RtpPacket* rtpPacket, int size);
+    RtspContext * ctx_;
+    
 
     int tcp_fd_;
     H264MediaSource h264_media_source_;
     RtpHeader rtp_header_;
 	
 	bool alive_;
+
+    std::shared_ptr<TimerEvent> timer_event_;
     
+    std::mutex latch_;
 
 };

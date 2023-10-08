@@ -3,7 +3,7 @@
 #include "helper/LOG.h"
 
 
-RtpConnection::RtpConnection(std::shared_ptr<RtspContext> ctx, int tcp_fd, std::string file_name):ctx_(ctx),tcp_fd_(tcp_fd), h264_media_source_(ctx,file_name)
+RtpConnection::RtpConnection(RtspContext * ctx, int tcp_fd, std::string file_name):ctx_(ctx),tcp_fd_(tcp_fd), h264_media_source_(ctx,file_name),timer_event_(std::make_shared<TimerEvent>(this, 40))
 {
 	this->alive_ = true;
 	rtp_header_.csrcLen = 0;
@@ -16,15 +16,26 @@ RtpConnection::RtpConnection(std::shared_ptr<RtspContext> ctx, int tcp_fd, std::
 	rtp_header_.timestamp = 0;
 	rtp_header_.ssrc = 0;
 
+    
+    timer_event_->setTimeoutCallback(TimeOutCb);
+    ctx_->scheduler_->addTimerEvent(timer_event_);
 }
 
 RtpConnection::~RtpConnection()
 {
-	
+    ctx_->scheduler_->removeTimerEvent(timer_event_);
+    timer_event_->stop();
+}
+
+void RtpConnection::TimeOutCb(void* t) {
+    RtpConnection* rtpp = static_cast<RtpConnection*>(t);
+    
+    rtpp->SendFrame();
+    
 }
 
 int RtpConnection::SendFrame() {
-	
+    //latch_.lock();
     auto frame_vec = h264_media_source_.ReadFrame();
     int ret = 0;
     if (frame_vec.size() == 0) {
@@ -134,7 +145,7 @@ int RtpConnection::SendFrame() {
 out:
 
     //LOG_INFO("sent bytes: %d, cseq: %d", sendBytes, (int)rtp_header_.seq);
-
+    //latch_.unlock();
     return sendBytes;
 
 

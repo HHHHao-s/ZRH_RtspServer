@@ -1,23 +1,33 @@
 #pragma once
 #include <unordered_map>
 #include "helper/Event.h"
+#include "helper/ThreadPool.h"
 #include <memory>
 #include <sys/epoll.h>
-#define MAX_EVENTS 32
+#include <mutex>
+#include <vector>
+
+
 
 class Poller
 {
 public:
+
 	Poller() {}
 	virtual ~Poller() {}
 	virtual bool AddIOEvent(std::shared_ptr<IOEvent> io_event) = 0;
 	virtual bool RemoveIOEvent(std::shared_ptr<IOEvent> io_event) = 0;
 	virtual bool UpdateIOEvent(std::shared_ptr<IOEvent> io_event) = 0;
-
+	virtual bool AddTimerEvent(std::shared_ptr<TimerEvent> timer_event) = 0;
+	virtual bool RemoveTimerEvent(std::shared_ptr<TimerEvent> timer_event) = 0;
 	virtual void Poll() = 0;
 
 protected:
+
+	std::mutex latch_;
+
 	std::unordered_map<int, std::shared_ptr<IOEvent>> fd2event_;
+	std::unordered_map<int, std::shared_ptr<TimerEvent>> fd2timer_;
 
 
 };
@@ -26,16 +36,22 @@ protected:
 class EpollPoller : public Poller
 {
 public:
+
 	EpollPoller();
 	virtual ~EpollPoller();
 	virtual bool AddIOEvent(std::shared_ptr<IOEvent> io_event);
 	virtual bool RemoveIOEvent(std::shared_ptr<IOEvent> io_event);
 	virtual bool UpdateIOEvent(std::shared_ptr<IOEvent> io_event);
+	virtual bool AddTimerEvent(std::shared_ptr<TimerEvent> timer_event);
+	virtual bool RemoveTimerEvent(std::shared_ptr<TimerEvent> timer_event);
 	virtual void Poll();
 
 
 private:
+
+	ThreadPool thread_pool_;
+
 	int epoll_fd_;
-	struct epoll_event active_events_[MAX_EVENTS]; // epoll_wait返回的活跃事件
+	std::vector<struct epoll_event> events_;
 };
 

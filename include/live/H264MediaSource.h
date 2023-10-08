@@ -22,7 +22,7 @@ class H264MediaSource
 {
 	//friend void CacheTask(H264MediaSource* t);
 public:
-	H264MediaSource(std::shared_ptr<RtspContext> ctx, std::string_view file_name);
+	H264MediaSource(RtspContext * ctx, std::string_view file_name);
 	~H264MediaSource();
 
 	/*	Read one frame from file then store it in frame
@@ -39,7 +39,7 @@ private:
 	std::mutex mutex_;
 	std::condition_variable cv_;
 
-	std::shared_ptr<RtspContext> ctx_;
+	RtspContext * ctx_;
 
 	std::string_view file_name_;
 	RingBuffer ring_buffer_;

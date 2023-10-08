@@ -2,10 +2,13 @@
 #include "helper/LOG.h"
 #include <unistd.h>
 
-EpollPoller::EpollPoller() : epoll_fd_(epoll_create1(EPOLL_CLOEXEC)){
+
+
+EpollPoller::EpollPoller() :thread_pool_(8), epoll_fd_(epoll_create1(EPOLL_CLOEXEC)), events_(16) {
 	if (epoll_fd_ < 0) {
 		LOG_ERROR("epoll_create error");
 	}
+
 }
 
 EpollPoller::~EpollPoller() {
@@ -33,7 +36,9 @@ bool EpollPoller::AddIOEvent(std::shared_ptr<IOEvent> io_event) {
 		LOG_ERROR("epoll_ctl error");
 		return false;
 	}
+	//latch_.lock();
 	fd2event_[fd] = io_event;
+	//latch_.unlock();
 	return true;
 }
 
@@ -46,7 +51,9 @@ bool EpollPoller::RemoveIOEvent(std::shared_ptr<IOEvent> io_event) {
 		LOG_ERROR("epoll_ctl error");
 		return false;
 	}
+	//latch_.lock();
 	fd2event_.erase(fd);
+	//latch_.unlock();
 	return true;
 }
 
@@ -73,25 +80,88 @@ bool EpollPoller::UpdateIOEvent(std::shared_ptr<IOEvent> io_event) {
 	return true;
 }
 
+
+
+bool EpollPoller::AddTimerEvent(std::shared_ptr<TimerEvent> timer_event) {
+
+	int fd = timer_event->getFd();
+	struct epoll_event event;
+
+	event.events |= EPOLLIN;
+	event.data.fd = fd;
+
+	int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &event);
+	if (ret < 0) {
+		LOG_ERROR("epoll_ctl error");
+		return false;
+	}
+	//latch_.lock();
+	fd2timer_[fd] = timer_event;
+	//latch_.unlock();
+	return true;
+
+}
+
+bool EpollPoller::RemoveTimerEvent(std::shared_ptr<TimerEvent> timer_event) {
+	int fd = timer_event->getFd();
+	struct epoll_event event;
+	event.data.fd = fd;
+	int ret = epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, &event);
+	if (ret < 0) {
+		LOG_ERROR("epoll_ctl error");
+		return false;
+	}
+	//latch_.lock();
+	fd2timer_.erase(fd);
+	//latch_.unlock();
+	return true;
+}
+
+
 void EpollPoller::Poll() {
 	int timeout = 1000;
 
-	int ret = epoll_wait(epoll_fd_, active_events_, MAX_EVENTS, timeout);
-	if (ret < 0) {
+	int cnt = epoll_wait(epoll_fd_, &events_[0], events_.size(), timeout);
+	if (cnt < 0) {
 		LOG_ERROR("epoll_wait error");
+		return;
 	}
-	else if (ret == 0) {
+	else if (cnt == 0) {
 		LOG_INFO("epoll_wait timeout");
+		return;
 	}
 	else {
-		LOG_INFO("epoll_wait return %d", ret);
+		LOG_INFO("epoll_wait return %d", cnt);
+		
 	}
-	for (int i = 0; i < ret; ++i) {
-		int fd = active_events_[i].data.fd;
+	//latch_.lock();
+	for (int i = 0; i < cnt; ++i) {
+		int fd = events_[i].data.fd;
+
 		auto iter = fd2event_.find(fd);
+		
 		if (iter != fd2event_.end()) {
-			iter->second->handleEvent();
+			std::shared_ptr<IOEvent> event = iter->second;
+			
+			LOG_INFO("handle event");
+			event->handleEvent();
+			
+			
+		}
+		else {
+			auto iter_timer = fd2timer_.find(fd);
+			uint64_t buf;
+			read(fd, &buf, sizeof(buf));
+			std::shared_ptr<TimerEvent> event = iter_timer->second;
+			
+			LOG_INFO("handle timer");
+			event->handleEvent();
+				
 		}
 	}
+	if ((int)events_.size() == cnt) {
+		events_.resize(events_.size() * 2);
+	}
+	//latch_.unlock();
 
 }

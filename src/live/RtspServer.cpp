@@ -10,16 +10,16 @@
 #include <assert.h>
 	
 
-RtspServer::RtspServer(std::shared_ptr<RtspContext> ctx) : ctx_(ctx) {
+RtspServer::RtspServer(RtspContext * ctx) : ctx_(ctx) {
 	this->socket_fd_ = OpenListenfd(this->port_);
 	if (this->socket_fd_ < 0) {
 		LOG_ERROR("OpenListenfd error\n");
 	}
-	std::shared_ptr<IOEvent> io_event = std::make_shared<IOEvent>(socket_fd_, this);
-	io_event->enableReadHandling();
-	io_event->setReadCallback(readCb);
+	io_event_ = std::make_shared<IOEvent>(socket_fd_, this);
+	io_event_->enableReadHandling();
+	io_event_->setReadCallback(readCb);
 
-	if (!ctx_->scheduler_->addIOEvent(io_event)) {
+	if (!ctx_->scheduler_->addIOEvent(io_event_)) {
 		LOG_ERROR("addIOEvent error\n");
 	}
 
@@ -97,6 +97,7 @@ void RtspServer::handleCloseConnect() {
 
 RtspServer::~RtspServer()
 {
-	//dtor
+	ctx_->scheduler_->removeIOEvent(io_event_);
+	Close(this->socket_fd_);
 }
 

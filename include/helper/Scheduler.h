@@ -3,13 +3,16 @@
 #include <memory>
 #include <queue>
 #include <mutex>
+
+class RtspContext;
+
 class Scheduler {
 
 public:
 
 	Scheduler() {
-		EpollPoller *epoll_poller = new EpollPoller();
-		poller_ = std::unique_ptr<Poller>(epoll_poller);
+		Poller * p = new EpollPoller();
+		poller_ = std::unique_ptr<Poller>(p);
 	}
 	~Scheduler() {}
 
@@ -19,9 +22,11 @@ public:
 		return true;
 	}
 
-	bool addIOEvent(std::shared_ptr<IOEvent> event){return poller_->AddIOEvent(event); }// reentrant
+	bool addIOEvent(std::shared_ptr<IOEvent> event){return poller_->AddIOEvent(event); }// multi-thread
 	bool updateIOEvent(std::shared_ptr<IOEvent> event){ return poller_->UpdateIOEvent(event);}
 	bool removeIOEvent(std::shared_ptr<IOEvent> event) { return poller_->RemoveIOEvent(event); }
+	bool addTimerEvent(std::shared_ptr<TimerEvent> event) { return poller_->AddTimerEvent(event); }
+	bool removeTimerEvent(std::shared_ptr<TimerEvent> event) { return poller_->RemoveTimerEvent(event); }
 
 	void loop() { 
 
@@ -32,6 +37,7 @@ public:
 	}
 
 private:
+
 	void handleTriggerEvent() {
 		std::lock_guard<std::mutex> guard(latch_);
 		while (!trigger_events_.empty()) {
@@ -45,8 +51,5 @@ private:
 
 	std::unique_ptr<Poller> poller_;
 	std::queue<std::shared_ptr<TriggerEvent>> trigger_events_;
-
-	
-
 
 };

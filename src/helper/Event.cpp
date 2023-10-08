@@ -1,6 +1,7 @@
 #include "helper/Event.h"
 #include <stdio.h>
 #include "helper/LOG.h"
+#include "helper/SocketHelper.h"
 
 TriggerEvent::TriggerEvent(void* arg) : arg_(arg), trigger_call_back_(NULL) {
 }
@@ -15,13 +16,30 @@ void TriggerEvent::handleEvent() {
 }
 
 
-TimerEvent::TimerEvent(void* arg) : arg_(arg),
+TimerEvent::TimerEvent(void* arg,uint64_t time_ms) : arg_(arg),
 timeout_call_back_(NULL),
-stop_(false) {
+stop_(false),
+interval_ms_(time_ms)
+{
+    time_fd_ = timerfd_create(CLOCK_MONOTONIC,  TFD_CLOEXEC);
+    if (time_fd_ < 0) {
+        LOG_ERROR("timerfd_create error");
+    }
+
+
+
+    struct itimerspec ts;
+    ts.it_value.tv_sec = 1;// expire after 1 second
+    ts.it_value.tv_nsec = 0;
+    ts.it_interval.tv_sec = 0;
+    ts.it_interval.tv_nsec = time_ms * 1000000; // expire every time_ms
+
+    timerfd_settime(time_fd_, 0, &ts, NULL);
+
 
 }
 TimerEvent::~TimerEvent() {
-
+    stop();
 }
 
 bool TimerEvent::handleEvent()
@@ -37,6 +55,12 @@ bool TimerEvent::handleEvent()
 }
 void TimerEvent::stop() {
     stop_ = true;
+    if (time_fd_ > 0) {
+        
+        Close(time_fd_);
+        time_fd_ = 0;
+    }
+    
 }
 
 

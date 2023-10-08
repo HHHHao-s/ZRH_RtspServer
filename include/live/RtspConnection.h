@@ -2,25 +2,29 @@
 #include <memory>
 #include "helper/RtspContext.h"
 #include "helper/Event.h"
+#include "live/Rtp.h"
 
 class RtspServer;
 
 class RtspConnection {
 	typedef void (*DisConnectCallback)(void *arg,int);
 public:
-	RtspConnection(std::shared_ptr<RtspContext> ctx, int client_fd, RtspServer *server);
+	RtspConnection(RtspContext * ctx, int client_fd, RtspServer *server);
 	~RtspConnection();
 
 	void setDisconnectCallback(DisConnectCallback cb) { disconnect_cb_ = cb; }
 
 private:
 	
+	std::vector<std::shared_ptr<RtpConnection>> rtp_conns_;
+
+	std::shared_ptr<IOEvent> io_event_;
 
 	static void readCallback(void* conn);
 
 	int handleRtspRequest();
 
-	std::shared_ptr<RtspContext> ctx_;
+	RtspContext * ctx_;
 
 	// this function is used for single thread
 	int handleOptions();
