@@ -5,14 +5,16 @@
 #include "helper/Event.h"
 #include "live/RtspConnection.h"
 #include <unordered_map>
+#include "live/MediaSession.h"	
 
+class RtspConnection;
 class RtspServer
 {
 
 public:
 
 
-	RtspServer(RtspContext* ctx);
+	RtspServer(RtspContext* ctx, MediaSession *media_session);
 	~RtspServer();
 	static void readCb(void *rtsp_server);
 
@@ -24,12 +26,20 @@ public:
 	
 	void Start();
 	
+	
 
 private:
 	int socket_fd_;
 	std::shared_ptr<IOEvent> io_event_;
 	RtspContext* ctx_;
+	MediaSession* media_session_;
+	static void cbSessionAddRtpConn(void *th,TrackId track_id, RtpConnection* rtp_connection);
+	 
+	void handleSessionAddRtpConn(TrackId track_id, RtpConnection* rtp_connection);
 	
+	static void cbSessionRemoveRtpConn(void *th, TrackId track_id, RtpConnection* rtp_connection);
+	void handleSessionRemoveRtpConn(TrackId track_id, RtpConnection* rtp_connection);
+
 	std::unordered_map<int, std::shared_ptr<RtspConnection>> fd2conn_;
 	
 	std::mutex latch_;
@@ -39,6 +49,6 @@ private:
 
 	char port_[6] = "11451";
 
-
+	
 	
 };

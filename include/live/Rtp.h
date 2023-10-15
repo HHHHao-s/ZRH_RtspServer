@@ -33,6 +33,8 @@ struct RtpHeader
 
 struct RtpPacket
 {
+    size_t size; // payload size
+    uint8_t prefix[4];
     struct RtpHeader rtpHeader;
     uint8_t payload[0];
 };
@@ -41,28 +43,24 @@ class RtpConnection
 {
 public:
     
-    RtpConnection(RtspContext * ctx, int tcp_fd , std::string file_name);
+    RtpConnection(RtspContext * ctx, int tcp_fd, uint8_t rtpChannel);
     ~RtpConnection();
 
-    static void TimeOutCb(void *);
+    
 
-    int SendPackeyOverTcp(RtpPacket* rtpPacket, int size);
-    int SendFrame();
+    
+    int SendFrame(RtpPacket *packet);
 
     
 
 private:
+    int SendPackeyOverTcp(RtpPacket* rtpPacket);
     RtspContext * ctx_;
-    
-
     int tcp_fd_;
-    H264MediaSource h264_media_source_;
-    RtpHeader rtp_header_;
-	
+  
 	bool alive_;
 
-    std::shared_ptr<TimerEvent> timer_event_;
-    
+    uint8_t rtp_channel_;
     std::mutex latch_;
 
 };

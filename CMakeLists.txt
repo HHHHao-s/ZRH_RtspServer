@@ -15,7 +15,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/)
 set(CMAKE_CXX_FLAGS
     "-std=c++17 -Wall -Werror -lpthread"
 )
-add_executable (RstpServer "src/live/RtspServer.cpp" "src/main.cpp" "src/helper/SocketHelper.cpp" "src/live/RtspConnection.cpp" "src/live/Rtp.cpp" "src/live/H264MediaSource.cpp" "src/helper/RingBuffer.cpp" "src/helper/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp")
+add_executable (RstpServer "src/live/RtspServer.cpp" "src/main.cpp" "src/helper/SocketHelper.cpp" "src/live/RtspConnection.cpp" "src/live/Rtp.cpp" "src/live/H264MediaSource.cpp" "src/helper/RingBuffer.cpp" "src/helper/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp")
 target_link_libraries(RstpServer pthread)
 add_compile_definitions(ROOT_DIR="${PROJECT_SOURCE_DIR}")
 # 将源代码添加到此项目的可执行文件。
@@ -29,8 +29,8 @@ endif()
 
 
 #test
-add_executable(RingBufferTest "src/helper/RingBuffer.cpp" "test/RingBufferTest.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp")
-add_executable(ThreadPoolTest  "src/helper/ThreadPool.cpp" "test/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp")
+add_executable(RingBufferTest "src/helper/RingBuffer.cpp" "test/RingBufferTest.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp")
+add_executable(ThreadPoolTest  "src/helper/ThreadPool.cpp" "test/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp")
 target_link_libraries(ThreadPoolTest pthread)
 enable_testing()
  

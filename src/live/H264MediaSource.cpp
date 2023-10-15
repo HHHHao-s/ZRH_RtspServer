@@ -21,7 +21,7 @@ static inline int startCode4(const RingBufferIterator& it)
 
 
 
-H264MediaSource::H264MediaSource(RtspContext * ctx, std::string_view file_name) :ctx_(ctx), file_name_(file_name), ring_buffer_(MAX_BUFFER_SIZE, file_name)
+H264MediaSource::H264MediaSource(RtspContext * ctx, std::string_view file_name) :MediaSource(ctx, file_name, 25), ring_buffer_(MAX_BUFFER_SIZE, file_name)
 {
     for (size_t i = 0; i < max_frame_size_; ++i) {
 	   CacheFrame();
@@ -49,11 +49,22 @@ std::vector<unsigned char> H264MediaSource::GetFrameFromFile() {
         LOG_INFO("it == ring_buffer_.end()");
         return  std::vector<unsigned char>() ;
     }
+    int off = 0;
+    if (startCode3(it)) {
+        off = 3;
+    }
+    else if (startCode4(it)) {
+		off = 4;
+	}
+    else {
+		LOG_INFO("startCode3(it) == 0 && startCode4(it) == 0");
+		return std::vector<unsigned char>();
+	}
 
 
-    if (startCode3(it) || startCode4(it)) {
+    if (off!=0) {
         // find next start code
-        it += 3;
+        it += off;
         while (it != ring_buffer_.end())
         {
 
@@ -69,7 +80,8 @@ std::vector<unsigned char> H264MediaSource::GetFrameFromFile() {
         }
         else {
 
-            auto it2 = ring_buffer_.begin();
+            auto it2 = ring_buffer_.begin()+off;
+            
 
             auto ret = it2.GetDataBetween(it);
             ring_buffer_.SetOffect(it);
@@ -88,7 +100,10 @@ std::vector<unsigned char> H264MediaSource::GetFrameFromFile() {
 std::vector<unsigned char> H264MediaSource::ReadFrame() {
 	
     std::unique_lock<std::mutex> lock(mutex_);
-    cv_.wait(lock, [this]() {return !frames_.empty(); });
+    cv_.wait(lock, [this]() {
+        //LOG_INFO("%d", (int)frames_.size());
+        return !frames_.empty();
+    });
     std::vector<unsigned char> ret = std::move(frames_.front());
     frames_.pop();
     lock.unlock();

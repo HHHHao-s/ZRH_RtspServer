@@ -5,12 +5,12 @@
 #include "helper/LOG.h"
 #include "helper/SocketHelper.h"
 #include <unistd.h>
-#include "live/RtspConnection.h"
+
 #include <thread>
 #include <assert.h>
 	
 
-RtspServer::RtspServer(RtspContext * ctx) : ctx_(ctx) {
+RtspServer::RtspServer(RtspContext * ctx,MediaSession* media_session) : ctx_(ctx), media_session_(media_session){
 	this->socket_fd_ = OpenListenfd(this->port_);
 	if (this->socket_fd_ < 0) {
 		LOG_ERROR("OpenListenfd error\n");
@@ -54,6 +54,9 @@ void RtspServer::handleRead() {
 	
 	std::shared_ptr<RtspConnection> conn = std::make_shared<RtspConnection>(ctx_, connfd, this);
 	conn->setDisconnectCallback(cbDisConnect);
+	conn->setSessionAddCallback(cbSessionAddRtpConn, this);
+	conn->setSessionRemoveCallback(cbSessionRemoveRtpConn, this);
+
 	fd2conn_[connfd] = conn;
 		
 
@@ -86,9 +89,10 @@ void RtspServer::handleCloseConnect() {
 	for (std::vector<int>::iterator it = disconnect_list_.begin(); it != disconnect_list_.end(); ++it) {
 
 		int clientFd = *it;
-
+		
 		assert(fd2conn_.count(clientFd)==1);
 		fd2conn_.erase(clientFd);
+		LOG_INFO("%d closed", clientFd);
 	}
 
 	disconnect_list_.clear();
@@ -101,3 +105,25 @@ RtspServer::~RtspServer()
 	Close(this->socket_fd_);
 }
 
+
+void RtspServer::cbSessionAddRtpConn(void* th,TrackId track_id , RtpConnection* rtp_connection) {
+	RtspServer* server = (RtspServer*)th;
+	server->handleSessionAddRtpConn(track_id,  rtp_connection);
+}
+
+void RtspServer::handleSessionAddRtpConn(TrackId track_id, RtpConnection* rtp_connection) {
+	media_session_->AddRtpConnection(track_id, (RtpConnection*)rtp_connection);
+	LOG_INFO("add rtp connection");
+}
+
+void RtspServer::cbSessionRemoveRtpConn(void* th, TrackId track_id, RtpConnection* rtp_connection) {
+
+	RtspServer* server = (RtspServer*)th;
+	server->handleSessionRemoveRtpConn(track_id, rtp_connection);
+
+}
+void RtspServer::handleSessionRemoveRtpConn(TrackId track_id, RtpConnection* rtp_connection) {
+	media_session_->RemoveRtpConnection(track_id, rtp_connection);
+	LOG_INFO("remove rtp connection");
+
+}

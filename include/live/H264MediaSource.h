@@ -10,15 +10,14 @@
 #include <list>
 #include "helper/RtspContext.h"
 #include "helper/RingBuffer.h"
+#include "live/MediaSource.h"
+#define MAX_FRAME_SIZE 1024 * 1024
 
-
-
-constexpr size_t MAX_BUFFER_SIZE = 1024 * 1024;
 class H264MediaSource;
 
 //void CacheTask(H264MediaSource* t);
 
-class H264MediaSource
+class H264MediaSource :public MediaSource
 {
 	//friend void CacheTask(H264MediaSource* t);
 public:
@@ -36,12 +35,6 @@ private:
 	void CacheFrame();
 
 
-	std::mutex mutex_;
-	std::condition_variable cv_;
-
-	RtspContext * ctx_;
-
-	std::string_view file_name_;
 	RingBuffer ring_buffer_;
 	enum 
 	{

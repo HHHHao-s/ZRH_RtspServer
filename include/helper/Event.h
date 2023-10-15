@@ -24,6 +24,7 @@ class TimerEvent {
 public:
 
     TimerEvent(void* arg, uint64_t time_ms);
+    TimerEvent(EventCallback cb, void* arg, uint64_t time_ms);
     ~TimerEvent();
     int getFd() const { return time_fd_; }
     void setArg(void* arg) { arg_ = arg; }

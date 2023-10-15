@@ -15,6 +15,23 @@ void TriggerEvent::handleEvent() {
         trigger_call_back_(arg_);
 }
 
+TimerEvent::TimerEvent(EventCallback cb, void* arg, uint64_t time_ms) : arg_(arg),
+timeout_call_back_(cb),
+stop_(false),
+interval_ms_(time_ms) {
+    time_fd_ = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC);
+    if (time_fd_ < 0) {
+        LOG_ERROR("timerfd_create error");
+    }
+
+    struct itimerspec ts;
+    ts.it_value.tv_sec = 1;// expire after 1 second
+    ts.it_value.tv_nsec = 0;
+    ts.it_interval.tv_sec = 0;
+    ts.it_interval.tv_nsec = time_ms * 1000000; // expire every time_ms
+
+    timerfd_settime(time_fd_, 0, &ts, NULL);
+}
 
 TimerEvent::TimerEvent(void* arg,uint64_t time_ms) : arg_(arg),
 timeout_call_back_(NULL),

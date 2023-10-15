@@ -131,7 +131,7 @@ void EpollPoller::Poll() {
 		return;
 	}
 	else {
-		LOG_INFO("epoll_wait return %d", cnt);
+		//LOG_INFO("epoll_wait return %d", cnt);
 		
 	}
 	//latch_.lock();
@@ -154,7 +154,7 @@ void EpollPoller::Poll() {
 			read(fd, &buf, sizeof(buf));
 			std::shared_ptr<TimerEvent> event = iter_timer->second;
 			
-			LOG_INFO("handle timer");
+			//LOG_INFO("handle timer");
 			event->handleEvent();
 				
 		}
