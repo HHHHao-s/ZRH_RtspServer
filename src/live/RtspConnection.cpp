@@ -75,7 +75,7 @@ bool RtspConnection::handlePlay() {
 
 	rtp_conns_.push_back(p);
 
-	session_add_cb(session_ptr_, TrackId0, p.get());
+	session_add_cb(session_ptr_, TrackId0, p.get(), session_name_);
 	
 
 	
@@ -115,6 +115,7 @@ bool RtspConnection::handleDescribe() {
 
 bool RtspConnection::handleOptions() {
 	char result[1024];
+	session_name_ = suffix_;
 	sprintf(result, "RTSP/1.0 200 OK\r\n"
 		"CSeq: %d\r\n"
 		"Public: OPTIONS, DESCRIBE, SETUP, PLAY\r\n"
@@ -148,7 +149,7 @@ RtspConnection::~RtspConnection()
 	
 
 	for (auto& rtp_conn : rtp_conns_)
-		session_remove_cb(session_ptr_, TrackId0, rtp_conn.get());
+		session_remove_cb(session_ptr_, TrackId0, rtp_conn.get(), session_name_);
 
 	if (client_fd_ > 0)
 		Close(client_fd_);

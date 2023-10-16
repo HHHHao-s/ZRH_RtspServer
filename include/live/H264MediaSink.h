@@ -2,6 +2,7 @@
 #include "H264MediaSource.h"
 #include "live/Sink.h"
 #include <string>
+
 #define RTP_PAYLOAD_TYPE_H264 96
 class H264MediaSink:public Sink {
 
@@ -15,11 +16,18 @@ public:
 
 	virtual std::string getMediaDescription(uint16_t port) {
         // to do
-        return "";
+        std::string ret="";
+        ret = ret + "m=video " + std::to_string(port) + " RTP/AVP 96\r\n";
+        return ret;
+
     }
 	virtual std::string getAttribute() {
         // to do
-        return "";
+        std::string ret = "";
+        ret = ret+"a=rtpmap:96 H264/90000\r\n";
+        ret += "a=framerate:" + std::to_string(media_source_->GetFPS()) + "\r\n";
+        
+        return ret;
     }
 
 protected:

@@ -31,10 +31,13 @@ public:
 	~MediaSession();
 
 	session_id_t GetSessionId() const { return session_id_; }
+	std::string_view GetSessionName() const { return session_name_; }
 
 	void AddSink(TrackId track_id, std::unique_ptr<Sink> sink);
 	void AddRtpConnection(TrackId track_id, RtpConnection* rtp_conn);
 	void RemoveRtpConnection(TrackId track_id, RtpConnection* rtp_conn);
+
+	std::string GenSdpDescription();
 private:
 
 	static void SessionCb(void* arg1, void *track, void* packet, PacketType packetType);

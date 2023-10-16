@@ -2,7 +2,7 @@
 
 MediaSession::MediaSession(std::string_view session_name){
 	session_name_ = session_name;
-
+	session_id_ = rand();
 
 }
 
@@ -70,4 +70,29 @@ void MediaSession::RemoveRtpConnection(TrackId track_id, RtpConnection* rtp_conn
 		tracks_[1].rtp_conns_.remove(rtp_conn);
 		return;
 	}
+}
+
+std::string MediaSession::GenSdpDescription() {
+	std::string ret;
+	long t = time(NULL);
+	ret+="v=0\r\n"
+        "o=- 9%" + std::to_string(t)+ "1 IN IP4 0.0.0.0\r\n"
+        "t=0 0\r\n"
+        "a=control:*\r\n"
+		"a=type:broadcast\r\n";
+	for (int i = 0; i < MAX_MEDIA_TRACK; ++i)
+	{
+		uint16_t port = 0;
+
+		if (tracks_[i].alive_ != true)
+			continue;
+
+		ret	+= tracks_[i].sink_->getMediaDescription(port);
+		ret += "c=IN IP4 0.0.0.0\r\n";
+		ret	+= tracks_[i].sink_->getAttribute();
+		ret += "a=control:track" + std::to_string(tracks_[i].track_id_) + "\r\n";
+
+		
+	}
+	return ret;
 }

@@ -10,7 +10,7 @@
 #include <assert.h>
 	
 
-RtspServer::RtspServer(RtspContext * ctx,MediaSession* media_session) : ctx_(ctx), media_session_(media_session){
+RtspServer::RtspServer(RtspContext* ctx, std::unique_ptr<MediaSessionManager>media_session_manager) : ctx_(ctx), media_session_manager_(std::move(media_session_manager)){
 	this->socket_fd_ = OpenListenfd(this->port_);
 	if (this->socket_fd_ < 0) {
 		LOG_ERROR("OpenListenfd error\n");
@@ -106,24 +106,38 @@ RtspServer::~RtspServer()
 }
 
 
-void RtspServer::cbSessionAddRtpConn(void* th,TrackId track_id , RtpConnection* rtp_connection) {
+void RtspServer::cbSessionAddRtpConn(void* th,TrackId track_id , RtpConnection* rtp_connection,const std::string& session_name) {
 	RtspServer* server = (RtspServer*)th;
-	server->handleSessionAddRtpConn(track_id,  rtp_connection);
+	server->handleSessionAddRtpConn(track_id,  rtp_connection, session_name);
 }
 
-void RtspServer::handleSessionAddRtpConn(TrackId track_id, RtpConnection* rtp_connection) {
-	media_session_->AddRtpConnection(track_id, (RtpConnection*)rtp_connection);
-	LOG_INFO("add rtp connection");
+void RtspServer::handleSessionAddRtpConn(TrackId track_id, RtpConnection* rtp_connection, const std::string& session_name) {
+	MediaSession* media_session = media_session_manager_->LookMediaSession(session_name);
+	if (media_session == nullptr) {
+		LOG_ERROR("media_session_==nullptr");
+	}		
+	else {
+		media_session->AddRtpConnection(track_id, (RtpConnection*)rtp_connection);
+		LOG_INFO("add rtp connection");
+	}
+	
 }
 
-void RtspServer::cbSessionRemoveRtpConn(void* th, TrackId track_id, RtpConnection* rtp_connection) {
+void RtspServer::cbSessionRemoveRtpConn(void* th, TrackId track_id, RtpConnection* rtp_connection, const std::string& session_name) {
 
 	RtspServer* server = (RtspServer*)th;
-	server->handleSessionRemoveRtpConn(track_id, rtp_connection);
+	server->handleSessionRemoveRtpConn(track_id, rtp_connection, session_name);
 
 }
-void RtspServer::handleSessionRemoveRtpConn(TrackId track_id, RtpConnection* rtp_connection) {
-	media_session_->RemoveRtpConnection(track_id, rtp_connection);
-	LOG_INFO("remove rtp connection");
+void RtspServer::handleSessionRemoveRtpConn(TrackId track_id, RtpConnection* rtp_connection, const std::string& session_name) {
+	MediaSession * media_session = media_session_manager_->LookMediaSession(session_name);
+	if (media_session == nullptr) {
+		LOG_ERROR("media_session_==nullptr");
+	}	
+	else {
+		media_session->RemoveRtpConnection(track_id, rtp_connection);
+		LOG_INFO("remove rtp connection");
+	}
+	
 
 }

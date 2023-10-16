@@ -6,6 +6,7 @@
 #include "live/RtspConnection.h"
 #include <unordered_map>
 #include "live/MediaSession.h"	
+#include "live/MediaSessionManager.h"
 
 class RtspConnection;
 class RtspServer
@@ -14,7 +15,7 @@ class RtspServer
 public:
 
 
-	RtspServer(RtspContext* ctx, MediaSession *media_session);
+	RtspServer(RtspContext* ctx, std::unique_ptr<MediaSessionManager>media_session_manager);
 	~RtspServer();
 	static void readCb(void *rtsp_server);
 
@@ -32,13 +33,15 @@ private:
 	int socket_fd_;
 	std::shared_ptr<IOEvent> io_event_;
 	RtspContext* ctx_;
-	MediaSession* media_session_;
-	static void cbSessionAddRtpConn(void *th,TrackId track_id, RtpConnection* rtp_connection);
-	 
-	void handleSessionAddRtpConn(TrackId track_id, RtpConnection* rtp_connection);
 	
-	static void cbSessionRemoveRtpConn(void *th, TrackId track_id, RtpConnection* rtp_connection);
-	void handleSessionRemoveRtpConn(TrackId track_id, RtpConnection* rtp_connection);
+	std::unique_ptr<MediaSessionManager> media_session_manager_;
+
+	static void cbSessionAddRtpConn(void *th,TrackId track_id, RtpConnection* rtp_connection, const std::string& session_name);
+	 
+	void handleSessionAddRtpConn(TrackId track_id, RtpConnection* rtp_connection, const std::string& session_name);
+	
+	static void cbSessionRemoveRtpConn(void *th, TrackId track_id, RtpConnection* rtp_connection, const std::string& session_name);
+	void handleSessionRemoveRtpConn(TrackId track_id, RtpConnection* rtp_connection, const std::string& session_name);
 
 	std::unordered_map<int, std::shared_ptr<RtspConnection>> fd2conn_;
 	

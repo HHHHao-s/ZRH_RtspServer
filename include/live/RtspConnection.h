@@ -9,18 +9,18 @@ class RtspServer;
 
 class RtspConnection {
 	typedef void (*DisConnectCallback)(void *arg,int);
-	typedef void (*SessionAddCallback)(void *th, TrackId track_id, RtpConnection* rtp_connection);
-	typedef void (*SessionRemoveCallback)(void *th, TrackId track_id, RtpConnection* rtp_connection);
+	typedef void (*SessionAddCallback)(void *th, TrackId track_id, RtpConnection* rtp_connection, const std::string& session_name);
+	typedef void (*SessionRemoveCallback)(void *th, TrackId track_id, RtpConnection* rtp_connection, const std::string& session_name);
 public:
 	RtspConnection(RtspContext * ctx, int client_fd, RtspServer *server);
 	~RtspConnection();
 
 	void setDisconnectCallback(DisConnectCallback cb) { disconnect_cb_ = cb; }
-	void setSessionAddCallback(void (*cb)(void* th, TrackId track_id, RtpConnection* rtp_connection), void* th) {
+	void setSessionAddCallback(SessionAddCallback cb, void* th) {
 		session_add_cb = cb;
 		session_ptr_ = th;
 	}
-	void setSessionRemoveCallback(void (*cb)(void* th, TrackId track_id, RtpConnection* rtp_connection), void* th) {
+	void setSessionRemoveCallback(SessionRemoveCallback cb, void* th) {
 		session_remove_cb = cb;
 		session_ptr_ = th;
 	}
@@ -80,4 +80,5 @@ private:
 	char method_buf_[32];
 	char url_[256];
 	char version_[32];
+	std::string session_name_;
 };

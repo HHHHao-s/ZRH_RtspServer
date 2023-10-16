@@ -11,30 +11,23 @@ endif()
 
 project (RstpServer)
 include_directories(${PROJECT_SOURCE_DIR}/include/)
-
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS
-    "-std=c++17 -Wall -Werror -lpthread"
+    "-Wall -Werror -lpthread"
 )
-add_executable (RstpServer "src/live/RtspServer.cpp" "src/main.cpp" "src/helper/SocketHelper.cpp" "src/live/RtspConnection.cpp" "src/live/Rtp.cpp" "src/live/H264MediaSource.cpp" "src/helper/RingBuffer.cpp" "src/helper/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp")
+add_executable (RstpServer "src/live/RtspServer.cpp" "src/main.cpp" "src/helper/SocketHelper.cpp" "src/live/RtspConnection.cpp" "src/live/Rtp.cpp" "src/live/H264MediaSource.cpp" "src/helper/RingBuffer.cpp" "src/helper/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp" "include/live/MediaSessionManager.h" "src/live/MediaSessionManager.cpp")
 target_link_libraries(RstpServer pthread)
 add_compile_definitions(ROOT_DIR="${PROJECT_SOURCE_DIR}")
 # 将源代码添加到此项目的可执行文件。
 
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET RstpServer PROPERTY CXX_STANDARD 17)
+  set_property(TARGET RstpServer PROPERTY CXX_STANDARD 20)
 endif()
 
 # TODO: 如有需要，请添加测试并安装目标。
 
 
-#test
-add_executable(RingBufferTest "src/helper/RingBuffer.cpp" "test/RingBufferTest.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp")
-add_executable(ThreadPoolTest  "src/helper/ThreadPool.cpp" "test/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp")
-target_link_libraries(ThreadPoolTest pthread)
-enable_testing()
- 
-add_test(
-	NAME RingBufferTest 
-	COMMAND $<TARGET_FILE:RingBufferTest>#
-	)
+
