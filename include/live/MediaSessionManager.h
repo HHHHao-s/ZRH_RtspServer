@@ -14,17 +14,19 @@ public:
 		media_sessions_.emplace(media_session->GetSessionName(), std::move(media_session));
 	}
 
-	MediaSession* LookMediaSession( const std::string& session_name)const {
-		auto it = media_sessions_.find(session_name);
-		if (it == media_sessions_.end()) {
+	std::shared_ptr<MediaSession> LookMediaSession( const std::string& session_name)const {
+		if (media_sessions_.count(session_name) == 0) {
 			return nullptr;
 		}
-		return it->second.get();
+		
+		return media_sessions_.at(session_name);
+		
+
 	}
 
 private:
 
-	std::unordered_map<std::string_view, std::unique_ptr<MediaSession>> media_sessions_;
+	std::unordered_map<std::string_view, std::shared_ptr<MediaSession>> media_sessions_;
 
 };
 

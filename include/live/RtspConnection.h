@@ -4,8 +4,10 @@
 #include "helper/Event.h"
 #include "live/Rtp.h"
 #include "live/MediaSession.h"
+#include "live/MediaSessionManager.h"
 
 class RtspServer;
+
 
 class RtspConnection {
 	typedef void (*DisConnectCallback)(void *arg,int);
@@ -18,18 +20,31 @@ public:
 	void setDisconnectCallback(DisConnectCallback cb) { disconnect_cb_ = cb; }
 	void setSessionAddCallback(SessionAddCallback cb, void* th) {
 		session_add_cb = cb;
-		session_ptr_ = th;
+		rtsp_server = th;
 	}
 	void setSessionRemoveCallback(SessionRemoveCallback cb, void* th) {
 		session_remove_cb = cb;
-		session_ptr_ = th;
+		rtsp_server = th;
+	}
+	void setRtspCloseCb(std::function<void(int client_fd)> cb) {
+		RtspCloseCb = cb;
+	}
+
+	void setMediaSessionManagerPtr(void* media_session_manager_ptr) {
+		media_session_manager_ptr_ = media_session_manager_ptr;
+		LookMediaSession = std::bind(&MediaSessionManager::LookMediaSession, *((MediaSessionManager*)media_session_manager_ptr_), std::placeholders::_1);
+
 	}
 
 private:
 	
+	
+
 	SessionAddCallback session_add_cb;
 	SessionRemoveCallback session_remove_cb;
-	void *session_ptr_;
+
+	void *media_session_manager_ptr_;
+	void *rtsp_server;
 
 	std::vector<std::shared_ptr<RtpConnection>> rtp_conns_;
 
@@ -80,5 +95,10 @@ private:
 	char method_buf_[32];
 	char url_[256];
 	char version_[32];
+	char result_[1024];
 	std::string session_name_;
+	session_id_t session_id_{ 0 };
+
+	std::function<std::shared_ptr<MediaSession>(const std::string& session_name)>LookMediaSession;
+	std::function<void(int client_fd)> RtspCloseCb;
 };

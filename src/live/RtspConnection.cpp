@@ -30,42 +30,40 @@ bool RtspConnection::handleSetup() {
 	
 	}
 
-	
-
-
-	char result[1024];
-	sprintf(result, "RTSP/1.0 200 OK\r\n"
+	char result_[1024];
+	sprintf(result_, "RTSP/1.0 200 OK\r\n"
 		"CSeq: %d\r\n"
 		"Transport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n"
-		"Session: 66334873\r\n"
+		"Session: %ul\r\n"
 		"\r\n",
-		cseq_);
-	write(client_fd_, result, strlen(result));
-	LOG_INFO("%s", result);
+		cseq_, session_id_);
+	write(client_fd_, result_, strlen(result_));
+	LOG_INFO("%s", result_);
 	return 0;
 }
 
 bool RtspConnection::handleTeardown() {
-	char result[1024];
-	sprintf(result, "RTSP/1.0 200 OK\r\n"
+
+	sprintf(result_, "RTSP/1.0 200 OK\r\n"
 		"CSeq: %d\r\n"
 		"\r\n",
 		cseq_);
-	write(client_fd_, result, strlen(result));
-	LOG_INFO("%s", result);
+	write(client_fd_, result_, strlen(result_));
+	LOG_INFO("%s", result_);
 	alive_ = false;
+	RtspCloseCb(client_fd_);
 	return 0;
 }
 
 bool RtspConnection::handlePlay() {
-	char result[1024];
-	sprintf(result, "RTSP/1.0 200 OK\r\n"
+
+	sprintf(result_, "RTSP/1.0 200 OK\r\n"
 		"CSeq: %d\r\n"
 		"Range: npt=0.000-\r\n"
-		"Session: 66334873; timeout=10\r\n\r\n",
-		cseq_);
-	write(client_fd_, result, strlen(result));
-	LOG_INFO("%s", result);
+		"Session: %ul; timeout=10\r\n\r\n",
+		cseq_, session_id_);
+	write(client_fd_, result_, strlen(result_));
+	LOG_INFO("%s", result_);
 
 	//LOG_INFO("%s", ROOT_DIR  "/data/test.h264");
 
@@ -75,55 +73,65 @@ bool RtspConnection::handlePlay() {
 
 	rtp_conns_.push_back(p);
 
-	session_add_cb(session_ptr_, TrackId0, p.get(), session_name_);
+	session_add_cb(rtsp_server, TrackId0, p.get(), session_name_);
 	
-
 	
 	return 0;
 }
 
 bool RtspConnection::handleDescribe() {
-	char result[1024];
-	char sdp[500];
+
+	//char sdp[500];
 	char localIp[100];
 
 	sscanf(url_, "rtsp://%[^:]:", localIp);
 
-	sprintf(sdp, "v=0\r\n"
-		"o=- 9%ld 1 IN IP4 %s\r\n"
-		"t=0 0\r\n"
-		"a=control:*\r\n"
-		"m=video 0 RTP/AVP/TCP 96\r\n"
-		"a=rtpmap:96 H264/90000\r\n"
-		"a=control:track0\r\n",
-		time(NULL), localIp);
+	std::string sdp = LookMediaSession(session_name_)->GenSdpDescription();
 
-	sprintf(result, "RTSP/1.0 200 OK\r\nCSeq: %d\r\n"
+	
+
+	sprintf(result_, "RTSP/1.0 200 OK\r\nCSeq: %d\r\n"
 		"Content-Base: %s\r\n"
 		"Content-type: application/sdp\r\n"
 		"Content-length: %zu\r\n\r\n"
 		"%s",
 		cseq_,
 		url_,
-		strlen(sdp),
-		sdp);
+		sdp.size(),
+		sdp.c_str());
 
-	write(client_fd_, result, strlen(result));
-	LOG_INFO("%s", result);
+	write(client_fd_, result_, strlen(result_));
+	LOG_INFO("%s", result_);
 	return 0;
 }
 
 bool RtspConnection::handleOptions() {
-	char result[1024];
+
 	session_name_ = suffix_;
-	sprintf(result, "RTSP/1.0 200 OK\r\n"
-		"CSeq: %d\r\n"
-		"Public: OPTIONS, DESCRIBE, SETUP, PLAY\r\n"
-		"\r\n",
-		cseq_);
-	write(client_fd_, result, strlen(result));
-	LOG_INFO("%s", result);
-	return 0;
+	auto meida_session = LookMediaSession(suffix_);
+	bool ret = true;
+	if (meida_session.get() == nullptr) {
+		LOG_INFO("session not found");
+		sprintf(result_, "RTSP/1.0 454 Session Not Found\r\n"
+			"CSeq: %d\r\n"
+			"\r\n",
+			cseq_);
+		ret = false;
+	}
+	else {
+		session_id_ = meida_session->GetSessionId();
+
+		sprintf(result_, "RTSP/1.0 200 OK\r\n"
+			"CSeq: %d\r\n"
+			"Public: OPTIONS, DESCRIBE, SETUP, PLAY\r\n"
+			"\r\n",
+			cseq_);
+		
+	}
+	write(client_fd_, result_, strlen(result_));
+	LOG_INFO("%s", result_);
+	
+	return ret;
 }
 
 
@@ -138,6 +146,8 @@ RtspConnection::RtspConnection(RtspContext * ctx, int client_fd, RtspServer* ser
 		LOG_ERROR("addIOEvent error\n");
 	}
 	rbuf_.resize(buf_size_);
+
+
 }
 
 RtspConnection::~RtspConnection()
@@ -149,7 +159,7 @@ RtspConnection::~RtspConnection()
 	
 
 	for (auto& rtp_conn : rtp_conns_)
-		session_remove_cb(session_ptr_, TrackId0, rtp_conn.get(), session_name_);
+		session_remove_cb(rtsp_server, TrackId0, rtp_conn.get(), session_name_);
 
 	if (client_fd_ > 0)
 		Close(client_fd_);
@@ -237,7 +247,25 @@ bool RtspConnection::parseRequestMethod(const char* line) {
 }
 
 bool RtspConnection::parseRequestLine(const char* line) {
-	// to do
+	
+	if (strncmp(line, "CSeq: ", sizeof("CSeq: ")-1) == 0) {
+		cseq_ = atoi(line + 6);
+	}
+	else if (strncmp(line, "Session: ", sizeof("Session: ") - 1) == 0) {
+		session_id_t session_id = atoi(line + 9);
+		if (session_id != session_id_) {
+			LOG_INFO("session id wrong");
+			return false;
+		}
+	}
+	else if (strncmp(line, "Transport: ", sizeof("Transport: ") - 1) == 0) {
+		LOG_INFO("Transport: %s", line + 11);
+	}
+	else {
+		LOG_INFO("line: %s", line);
+		return false;
+	}
+	
 	return false;
 }
 
@@ -299,6 +327,13 @@ int RtspConnection::handleRtspRequest() {
 			LOG_INFO("method wrong");
 			return false;
 		}
+		
+		do {
+			std::getline(iss, line);
+			//LOG_INFO("line: %s", line.c_str());
+			parseRequestLine(line.c_str());
+			
+		} while (!iss.eof());
 		
 
 		switch (method_)

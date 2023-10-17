@@ -56,7 +56,8 @@ void RtspServer::handleRead() {
 	conn->setDisconnectCallback(cbDisConnect);
 	conn->setSessionAddCallback(cbSessionAddRtpConn, this);
 	conn->setSessionRemoveCallback(cbSessionRemoveRtpConn, this);
-
+	conn->setMediaSessionManagerPtr(media_session_manager_.get());
+	conn->setRtspCloseCb(std::bind(&RtspServer::handleDisConnect, this, std::placeholders::_1));
 	fd2conn_[connfd] = conn;
 		
 
@@ -112,8 +113,8 @@ void RtspServer::cbSessionAddRtpConn(void* th,TrackId track_id , RtpConnection* 
 }
 
 void RtspServer::handleSessionAddRtpConn(TrackId track_id, RtpConnection* rtp_connection, const std::string& session_name) {
-	MediaSession* media_session = media_session_manager_->LookMediaSession(session_name);
-	if (media_session == nullptr) {
+	auto media_session = media_session_manager_->LookMediaSession(session_name);
+	if (media_session.get() == nullptr) {
 		LOG_ERROR("media_session_==nullptr");
 	}		
 	else {
@@ -130,8 +131,8 @@ void RtspServer::cbSessionRemoveRtpConn(void* th, TrackId track_id, RtpConnectio
 
 }
 void RtspServer::handleSessionRemoveRtpConn(TrackId track_id, RtpConnection* rtp_connection, const std::string& session_name) {
-	MediaSession * media_session = media_session_manager_->LookMediaSession(session_name);
-	if (media_session == nullptr) {
+	auto media_session = media_session_manager_->LookMediaSession(session_name);
+	if (media_session.get() == nullptr) {
 		LOG_ERROR("media_session_==nullptr");
 	}	
 	else {
