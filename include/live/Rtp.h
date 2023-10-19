@@ -47,7 +47,9 @@ public:
     ~RtpConnection();
 
     
-
+    void setAlive(bool alive) {
+		alive_ = alive;
+	}
     
     int SendFrame(RtpPacket *packet);
 

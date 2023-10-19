@@ -5,7 +5,7 @@
 
 RtpConnection::RtpConnection(RtspContext * ctx, int tcp_fd, uint8_t rtpChannel):ctx_(ctx),tcp_fd_(tcp_fd)
 {
-	this->alive_ = true;
+	this->alive_ = false;
     rtp_channel_ = rtpChannel;
 }
 
@@ -36,7 +36,7 @@ int RtpConnection::SendPackeyOverTcp(RtpPacket* rtpPacket) {
 
     uint32_t rtpSize = RTP_HEADER_SIZE + rtpPacket->size;
     rtpPacket->prefix[0] = 0x24;//$
-    rtpPacket->prefix[1] = 0x00;// track id
+    rtpPacket->prefix[1] = rtp_channel_;// channel id
     rtpPacket->prefix[2] = (uint8_t)(((rtpSize) & 0xFF00) >> 8);
     rtpPacket->prefix[3] = (uint8_t)((rtpSize) & 0xFF);
 

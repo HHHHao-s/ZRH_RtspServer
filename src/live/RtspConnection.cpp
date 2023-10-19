@@ -29,14 +29,41 @@ bool RtspConnection::handleSetup() {
 		LOG_INFO("RTP/AVP/UDP");
 	
 	}
+	 
+	if (sscanf(suffix_, "%*[^/]/%s", track_) == 1) {
+		LOG_INFO("track_:%s", track_);
+	}
+	else {
+		
+		LOG_INFO("suffix_:%s", suffix_);
+		return false;
+	}
+
+	auto p1 = std::make_shared<RtpConnection>(ctx_, this->client_fd_, channel1_);
+
+	rtp_conns_.push_back(p1);
+	if (strncmp(track_, "track0", sizeof("track0") - 1) == 0) {
+		session_add_cb(rtsp_server, TrackId0, p1.get(), session_name_);
+	}
+	else if (strncmp(track_, "track1", sizeof("track0") - 1) == 0) {
+		session_add_cb(rtsp_server, TrackId1, p1.get(), session_name_);
+	}
+	else {
+		LOG_INFO("track_:%s", track_);
+		return false;
+	}
+	
+	
+
+	
 
 	char result_[1024];
 	sprintf(result_, "RTSP/1.0 200 OK\r\n"
 		"CSeq: %d\r\n"
-		"Transport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n"
+		"Transport: RTP/AVP/TCP;unicast;interleaved=%d-%d\r\n"
 		"Session: %ul\r\n"
 		"\r\n",
-		cseq_, session_id_);
+		cseq_, channel1_, channel2_, session_id_);
 	write(client_fd_, result_, strlen(result_));
 	LOG_INFO("%s", result_);
 	return 0;
@@ -67,13 +94,9 @@ bool RtspConnection::handlePlay() {
 
 	//LOG_INFO("%s", ROOT_DIR  "/data/test.h264");
 
-
+	for(auto &conn:rtp_conns_)
+		conn->setAlive(true);
 	
-	auto p = std::make_shared<RtpConnection>(ctx_, this->client_fd_, 0);
-
-	rtp_conns_.push_back(p);
-
-	session_add_cb(rtsp_server, TrackId0, p.get(), session_name_);
 	
 	
 	return 0;
@@ -158,8 +181,11 @@ RtspConnection::~RtspConnection()
 	LOG_INFO("RtspConnection::~RtspConnection()");
 	
 
-	for (auto& rtp_conn : rtp_conns_)
-		session_remove_cb(rtsp_server, TrackId0, rtp_conn.get(), session_name_);
+	
+	session_remove_cb(rtsp_server, TrackId0, rtp_conns_[0].get(), session_name_);
+	session_remove_cb(rtsp_server, TrackId1, rtp_conns_[1].get(), session_name_);
+	
+		
 
 	if (client_fd_ > 0)
 		Close(client_fd_);
@@ -260,6 +286,10 @@ bool RtspConnection::parseRequestLine(const char* line) {
 	}
 	else if (strncmp(line, "Transport: ", sizeof("Transport: ") - 1) == 0) {
 		LOG_INFO("Transport: %s", line + 11);
+		if (strncmp(line + 11, "RTP/AVP/TCP", sizeof("RTP/AVP/TCP") - 1) == 0) {
+			sscanf(line, "Transport: RTP/AVP/TCP;unicast;interleaved=%d-%d", &channel1_, &channel2_);
+		}
+		
 	}
 	else {
 		LOG_INFO("line: %s", line);

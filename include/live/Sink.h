@@ -71,7 +71,7 @@ private:
         if (frame.size() == 0) {
 			return;
 		}
-		sendFrame(frame);
+		sendFrame(std::move(frame));
     }
 
 protected:

@@ -24,7 +24,7 @@ public:
 	virtual std::string getAttribute() {
         // to do
         std::string ret = "";
-        ret = ret+"a=rtpmap:96 H264/90000\r\n";
+        ret = ret+"a=rtpmap:96 H264/16000\r\n";
         ret += "a=framerate:" + std::to_string(media_source_->GetFPS()) + "\r\n";
         
         return ret;
@@ -135,7 +135,7 @@ protected:
                 sendBytes += ret;
             }
         }
-        rtp_header_.timestamp += 90000 / 25;
+        rtp_header_.timestamp += 16000 / media_source_->GetFPS();
 
 
 

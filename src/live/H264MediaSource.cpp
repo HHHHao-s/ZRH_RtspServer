@@ -21,7 +21,7 @@ static inline int startCode4(const RingBufferIterator& it)
 
 
 
-H264MediaSource::H264MediaSource(RtspContext * ctx, std::string_view file_name) :MediaSource(ctx, file_name, 25), ring_buffer_(MAX_BUFFER_SIZE, file_name)
+H264MediaSource::H264MediaSource(RtspContext * ctx, std::string_view file_name) :MediaSource(ctx, file_name, H264_FRAME_FPS), ring_buffer_(MAX_BUFFER_SIZE, file_name)
 {
     for (size_t i = 0; i < max_frame_size_; ++i) {
 	   CacheFrame();
@@ -138,7 +138,7 @@ void H264MediaSource::CacheFrame() {
         auto frame = t->GetFrameFromFile();
 
         if (frame.size() > 0) {
-            t->frames_.push(frame);
+            t->frames_.emplace(std::move(frame));
         }
         else {
             //LOG_INFO("frame.size() == 0");

@@ -96,6 +96,9 @@ private:
 	char url_[256];
 	char version_[32];
 	char result_[1024];
+	char track_[32];
+	int channel1_;
+	int channel2_;
 	std::string session_name_;
 	session_id_t session_id_{ 0 };
 

@@ -62,6 +62,19 @@ public:
 		iterator.ring_buffer_ = nullptr;
 	}
 
+	unsigned char* get() const {
+		if (ring_buffer_ == nullptr) {
+			LOG_INFO("ring_buffer_ is nullptr");
+			return nullptr;
+		}
+		if (cur_arr_ == 0) {
+			return const_cast<unsigned char*>(ring_buffer_->arr0_.data()) + offect_;
+		}
+		else {
+			return const_cast<unsigned char*>(ring_buffer_->arr1_.data()) + offect_;
+		}
+	}
+
 	unsigned char operator*() const{
 		if (ring_buffer_ == nullptr) {
 			LOG_INFO("ring_buffer_ is nullptr");

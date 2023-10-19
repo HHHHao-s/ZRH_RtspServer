@@ -12,7 +12,7 @@
 #include "helper/RingBuffer.h"
 #include "live/MediaSource.h"
 #define MAX_FRAME_SIZE 1024 * 1024
-
+#define H264_FRAME_FPS 30
 class H264MediaSource;
 
 //void CacheTask(H264MediaSource* t);

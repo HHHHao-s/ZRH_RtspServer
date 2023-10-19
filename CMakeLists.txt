@@ -17,7 +17,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS
     "-Wall -Werror -lpthread"
 )
-add_executable (RstpServer "src/live/RtspServer.cpp" "src/main.cpp" "src/helper/SocketHelper.cpp" "src/live/RtspConnection.cpp" "src/live/Rtp.cpp" "src/live/H264MediaSource.cpp" "src/helper/RingBuffer.cpp" "src/helper/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp" "include/live/MediaSessionManager.h" "src/live/MediaSessionManager.cpp")
+add_executable (RstpServer "src/live/RtspServer.cpp" "src/main.cpp" "src/helper/SocketHelper.cpp" "src/live/RtspConnection.cpp" "src/live/Rtp.cpp" "src/live/H264MediaSource.cpp" "src/helper/RingBuffer.cpp" "src/helper/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp" "include/live/MediaSessionManager.h" "src/live/MediaSessionManager.cpp" "include/live/AACMediaSink.h" "include/live/AACMediaSource.h" "src/live/AACMediaSource.cpp" "src/live/AACMediaSink.cpp")
 target_link_libraries(RstpServer pthread)
 add_compile_definitions(ROOT_DIR="${PROJECT_SOURCE_DIR}")
 # 将源代码添加到此项目的可执行文件。
