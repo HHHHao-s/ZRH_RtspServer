@@ -17,15 +17,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS
     "-Wall -Werror -lpthread"
 )
-add_executable (RstpServer "src/live/RtspServer.cpp" "src/main.cpp" "src/helper/SocketHelper.cpp" "src/live/RtspConnection.cpp" "src/live/Rtp.cpp" "src/live/H264MediaSource.cpp" "src/helper/RingBuffer.cpp" "src/helper/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp" "include/live/MediaSessionManager.h" "src/live/MediaSessionManager.cpp" "include/live/AACMediaSink.h" "include/live/AACMediaSource.h" "src/live/AACMediaSource.cpp" "src/live/AACMediaSink.cpp")
+add_executable (RstpServer "src/live/RtspServer.cpp" "src/main.cpp" "src/helper/SocketHelper.cpp" "src/live/RtspConnection.cpp" "src/live/Rtp.cpp" "src/live/H264MediaSource.cpp" "src/helper/RingBuffer.cpp" "src/helper/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp" "include/live/MediaSessionManager.h" "src/live/MediaSessionManager.cpp" "include/live/AACMediaSink.h" "include/live/AACMediaSource.h" "src/live/AACMediaSource.cpp" "src/live/AACMediaSink.cpp" "test/UDP.cpp")
 target_link_libraries(RstpServer pthread)
 add_compile_definitions(ROOT_DIR="${PROJECT_SOURCE_DIR}")
 # 将源代码添加到此项目的可执行文件。
+add_executable (UDP_test "test/UDP.cpp")
 
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET RstpServer PROPERTY CXX_STANDARD 20)
-endif()
 
 # TODO: 如有需要，请添加测试并安装目标。
 

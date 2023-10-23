@@ -104,4 +104,6 @@ private:
 
 	std::function<std::shared_ptr<MediaSession>(const std::string& session_name)>LookMediaSession;
 	std::function<void(int client_fd)> RtspCloseCb;
+
+	bool is_tcp_;
 };

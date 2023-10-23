@@ -24,7 +24,9 @@ public:
 	void handleDisConnect(int clientFd);
 	static void cbCloseConnect(void* arg);
 	void handleCloseConnect();
-	
+	//static void udpReadCb(void* rtsp_server);
+	//void handleUdpRead();
+
 	void Start();
 	
 	
@@ -50,8 +52,7 @@ private:
 	
 	std::shared_ptr<TriggerEvent> close_trigger_event_;// 关闭连接的触发事件
 
-	char port_[6] = "11451";
-
+	const char port_[6] = "11451";
 	
 	
 };

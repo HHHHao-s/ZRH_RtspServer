@@ -27,6 +27,7 @@ RtspServer::RtspServer(RtspContext* ctx, std::unique_ptr<MediaSessionManager>med
 	close_trigger_event_->setTriggerCallback(cbCloseConnect);
 
 
+
 }
 
 void RtspServer::Start() {
@@ -37,6 +38,27 @@ void RtspServer::Start() {
 
 }
 
+//void RtspServer::udpReadCb(void* rtsp_server) {
+//	LOG_INFO("RtspServer udpReadCb");
+//	RtspServer* server = (RtspServer*)rtsp_server;
+//	server->handleUdpRead();
+//}
+//
+//void RtspServer::handleUdpRead() {
+//	sockaddr_storage client_addr;
+//	memset(&client_addr, 0, sizeof(sockaddr_storage));
+//	socklen_t client_len = sizeof(sockaddr_storage);
+//
+//	int connfd = Accept(this->socket_fd_, (sockaddr*)&client_addr ,&client_len);
+//	if (connfd < 0) {
+//		LOG_ERROR("Accept error\n");
+//	}
+//	LOG_INFO("Accept a new DataPacket\n");
+//
+//
+//	
+//}
+
 void RtspServer::readCb(void * rtsp_server) {
 	LOG_INFO("RtspServer readCb");
 	RtspServer * server = (RtspServer *)rtsp_server;
@@ -44,7 +66,7 @@ void RtspServer::readCb(void * rtsp_server) {
 }
 
 void RtspServer::handleRead() {
-	LOG_INFO("RtspServer handleRead\n");
+
 	int connfd = Accept(this->socket_fd_, NULL, NULL);
 	if (connfd < 0) {
 		LOG_ERROR("Accept error\n");
@@ -104,6 +126,7 @@ RtspServer::~RtspServer()
 {
 	ctx_->scheduler_->removeIOEvent(io_event_);
 	Close(this->socket_fd_);
+
 }
 
 

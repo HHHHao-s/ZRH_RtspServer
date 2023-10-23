@@ -18,17 +18,8 @@ bool RtspConnection::handleSetup() {
 	
 
 
-	size_t pos=std::string::npos;
-	if ((pos = rbuf_.find("RTP/AVP/TCP")) != std::string::npos) {
-		LOG_INFO("RTP/AVP/TCP");
-	}
-	else if ((pos = rbuf_.find("RTP/AVP")) != std::string::npos) {
-		LOG_INFO("RTP/AVP");
-	}
-	else {
-		LOG_INFO("RTP/AVP/UDP");
+
 	
-	}
 	 
 	if (sscanf(suffix_, "%*[^/]/%s", track_) == 1) {
 		LOG_INFO("track_:%s", track_);
@@ -39,32 +30,57 @@ bool RtspConnection::handleSetup() {
 		return false;
 	}
 
-	auto p1 = std::make_shared<RtpConnection>(ctx_, this->client_fd_, channel1_);
+	
 
-	rtp_conns_.push_back(p1);
-	if (strncmp(track_, "track0", sizeof("track0") - 1) == 0) {
-		session_add_cb(rtsp_server, TrackId0, p1.get(), session_name_);
-	}
-	else if (strncmp(track_, "track1", sizeof("track0") - 1) == 0) {
-		session_add_cb(rtsp_server, TrackId1, p1.get(), session_name_);
+	if (is_tcp_) {
+		auto p1 = std::make_shared<RtpConnection>(ctx_, this->client_fd_, channel1_);
+		rtp_conns_.push_back(p1);
+		if (strncmp(track_, "track0", sizeof("track0") - 1) == 0) {
+			session_add_cb(rtsp_server, TrackId0, p1.get(), session_name_);
+		}
+		else if (strncmp(track_, "track1", sizeof("track0") - 1) == 0) {
+			session_add_cb(rtsp_server, TrackId1, p1.get(), session_name_);
+		}
+		else {
+			LOG_INFO("track_:%s", track_);
+			return false;
+		}
+		sprintf(result_, "RTSP/1.0 200 OK\r\n"
+			"CSeq: %d\r\n"
+			"Transport: RTP/AVP/TCP;unicast;interleaved=%d-%d\r\n"
+			"Session: %ul; timeout=10\r\n\r\n",
+			cseq_, channel1_, channel2_, session_id_);
+			Write(client_fd_, result_, strlen(result_));
+			
+
+			
 	}
 	else {
-		LOG_INFO("track_:%s", track_);
-		return false;
+		
+		auto p1 = std::make_shared<RtpConnection>(ctx_, client_fd_, channel1_, true);
+
+		rtp_conns_.push_back(p1);
+
+		if (strncmp(track_, "track0", sizeof("track0") - 1) == 0) {
+			session_add_cb(rtsp_server, TrackId0, p1.get(), session_name_);
+		}
+		else if (strncmp(track_, "track1", sizeof("track0") - 1) == 0) {
+			session_add_cb(rtsp_server, TrackId1, p1.get(), session_name_);
+		}
+		else {
+			LOG_INFO("track_:%s", track_);
+			return false;
+		}
+
+		sprintf(result_, "RTSP/1.0 200 OK\r\n"
+			"CSeq: %d\r\n"
+			"Transport: RTP/AVP;unicast;client_port=%d-%d;server_port=%d-%d\r\n"
+			"Session: %ul; timeout=10\r\n\r\n",
+			cseq_, channel1_, channel2_,p1->getLocalPort(),p1->getLocalPort()+1, session_id_);
+			Write(client_fd_, result_, strlen(result_));
+		
 	}
 	
-	
-
-	
-
-	char result_[1024];
-	sprintf(result_, "RTSP/1.0 200 OK\r\n"
-		"CSeq: %d\r\n"
-		"Transport: RTP/AVP/TCP;unicast;interleaved=%d-%d\r\n"
-		"Session: %ul\r\n"
-		"\r\n",
-		cseq_, channel1_, channel2_, session_id_);
-	write(client_fd_, result_, strlen(result_));
 	LOG_INFO("%s", result_);
 	return 0;
 }
@@ -75,7 +91,7 @@ bool RtspConnection::handleTeardown() {
 		"CSeq: %d\r\n"
 		"\r\n",
 		cseq_);
-	write(client_fd_, result_, strlen(result_));
+	Write(client_fd_, result_, strlen(result_));
 	LOG_INFO("%s", result_);
 	alive_ = false;
 	RtspCloseCb(client_fd_);
@@ -89,7 +105,7 @@ bool RtspConnection::handlePlay() {
 		"Range: npt=0.000-\r\n"
 		"Session: %ul; timeout=10\r\n\r\n",
 		cseq_, session_id_);
-	write(client_fd_, result_, strlen(result_));
+	Write(client_fd_, result_, strlen(result_));
 	LOG_INFO("%s", result_);
 
 	//LOG_INFO("%s", ROOT_DIR  "/data/test.h264");
@@ -123,7 +139,7 @@ bool RtspConnection::handleDescribe() {
 		sdp.size(),
 		sdp.c_str());
 
-	write(client_fd_, result_, strlen(result_));
+	Write(client_fd_, result_, strlen(result_));
 	LOG_INFO("%s", result_);
 	return 0;
 }
@@ -151,7 +167,7 @@ bool RtspConnection::handleOptions() {
 			cseq_);
 		
 	}
-	write(client_fd_, result_, strlen(result_));
+	Write(client_fd_, result_, strlen(result_));
 	LOG_INFO("%s", result_);
 	
 	return ret;
@@ -181,9 +197,11 @@ RtspConnection::~RtspConnection()
 	LOG_INFO("RtspConnection::~RtspConnection()");
 	
 
+	if (rtp_conns_.size() > 0) {
+		session_remove_cb(rtsp_server, TrackId0, rtp_conns_[0].get(), session_name_);
+		session_remove_cb(rtsp_server, TrackId1, rtp_conns_[1].get(), session_name_);
+	}
 	
-	session_remove_cb(rtsp_server, TrackId0, rtp_conns_[0].get(), session_name_);
-	session_remove_cb(rtsp_server, TrackId1, rtp_conns_[1].get(), session_name_);
 	
 		
 
@@ -193,30 +211,6 @@ RtspConnection::~RtspConnection()
 }
 
 
-//int RtspConnection::playLoop() {
-//#ifndef ROOT_DIR
-//#define ROOT_DIR "../"	
-//#endif // ROOT_DIR
-//
-//	LOG_INFO("%s", ROOT_DIR  "/data/test.h264");
-//
-//	
-//
-//	RtpConnection rtp_connection(ctx_, this->client_fd_, ROOT_DIR  "/data/test.h264");
-//	
-//	while (1) {	
-//		//LOG_INFO("begin send");	
-//		if (rtp_connection.SendFrame() == -1) {
-//			
-//			break;
-//		}
-//		//LOG_INFO("begin sleep");
-//		usleep(40);// 25fps
-//		//LOG_INFO("end sleep");
-//
-//	}
-//	return 0;
-//}
 
 void RtspConnection::readCallback(void *conn) {
 	RtspConnection* rtsp_connection = static_cast<RtspConnection*>(conn);
@@ -288,7 +282,21 @@ bool RtspConnection::parseRequestLine(const char* line) {
 		LOG_INFO("Transport: %s", line + 11);
 		if (strncmp(line + 11, "RTP/AVP/TCP", sizeof("RTP/AVP/TCP") - 1) == 0) {
 			sscanf(line, "Transport: RTP/AVP/TCP;unicast;interleaved=%d-%d", &channel1_, &channel2_);
+			is_tcp_ = true;
 		}
+		else if (strncmp(line + 11, "RTP/AVP/UDP", sizeof("RTP/AVP/UDP") - 1) == 0) {
+			sscanf(line, "Transport: RTP/AVP/UDP;unicast;client_port=%d-%d", &channel1_, &channel2_);
+			is_tcp_ = false;
+		}
+		else if (strncmp(line + 11, "RTP/AVP", sizeof("RTP/AVP") - 1) == 0) {
+			sscanf(line, "Transport: RTP/AVP;unicast;client_port=%d-%d", &channel1_, &channel2_);
+			is_tcp_ = false;
+		}		
+		else {
+			LOG_INFO("Transport wrong");
+			return false;
+		}
+		
 		
 	}
 	else {

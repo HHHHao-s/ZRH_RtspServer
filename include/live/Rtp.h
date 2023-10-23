@@ -43,7 +43,8 @@ class RtpConnection
 {
 public:
     
-    RtpConnection(RtspContext * ctx, int tcp_fd, uint8_t rtpChannel);
+    RtpConnection(RtspContext * ctx, int tcp_fd, uint16_t rtpChannel);
+    RtpConnection(RtspContext* ctx, int tcp_fd, uint16_t remote_port, bool udp);
     ~RtpConnection();
 
     
@@ -53,16 +54,24 @@ public:
     
     int SendFrame(RtpPacket *packet);
 
+    uint16_t getLocalPort() {
+		return local_port_;
+	}
     
 
 private:
-    int SendPackeyOverTcp(RtpPacket* rtpPacket);
+    int SendPacketOverTcp(RtpPacket* rtpPacket);
+    int SendPacketOverUdp(RtpPacket* rtpPacket);
     RtspContext * ctx_;
-    int tcp_fd_;
+    int sock_fd_;
   
 	bool alive_;
 
-    uint8_t rtp_channel_;
+    uint16_t rtp_channel_;
     std::mutex latch_;
-
+    bool is_tcp_;
+    
+    uint16_t remote_port_;
+    uint16_t local_port_;
+    sockaddr_storage remote_addr_;
 };
