@@ -14,10 +14,13 @@ RtpConnection::RtpConnection(RtspContext * ctx, int tcp_fd, uint16_t rtpChannel)
 RtpConnection::RtpConnection(RtspContext* ctx, int  tcp_fd, uint16_t remote_port, bool is_udp) {
     this->alive_ = false;
 	ctx_ = ctx;
-    remote_port_ = remote_port;
+    remote_rtp_port_ = remote_port;
+    remote_rtcp_port_ = remote_port + 1;
 
     socklen_t len = sizeof(sockaddr_storage);
-    Getsockname(tcp_fd, (sockaddr*)&remote_addr_, &len);
+
+    // get remote address
+    GetPeerName(tcp_fd, (sockaddr*)&remote_addr_, &len);
 
     sockaddr_in* sock_addr = (sockaddr_in*)&remote_addr_;
 
@@ -29,7 +32,12 @@ RtpConnection::RtpConnection(RtspContext* ctx, int  tcp_fd, uint16_t remote_port
     sock_addr->sin_family = AF_INET;
 
 
-    sock_fd_ = OpenClientUdp(&local_port_);
+
+    ShowAddress(sock_addr);
+
+    sock_fd_ = OpenClientUdp(&local_rtp_port_);
+    rtcp_sock_fd_ = OpenAcquireClientUdp(local_rtcp_port_);
+    
 
 
 	is_tcp_ = false;
@@ -80,15 +88,9 @@ int RtpConnection::SendPacketOverUdp(RtpPacket* rtpPacket) {
 
     uint32_t rtpSize = RTP_HEADER_SIZE + rtpPacket->size;
     
-    
+    int ret = SendTo(sock_fd_, &rtpPacket->rtpHeader, rtpSize, 0,(sockaddr*)&remote_addr_, sizeof(sockaddr_in));
 
-    // no prefix for udp
 
-    int tmp_fd = socket(AF_INET, SOCK_DGRAM, 0);
-
-    int ret = SendTo(tmp_fd, rtpPacket->payload, rtpSize, 0,(sockaddr*)&remote_addr_, sizeof(sockaddr_in));
-
-    Close(tmp_fd);
     //LOG_INFO("sent size:%d", ret);
     return ret;
 }

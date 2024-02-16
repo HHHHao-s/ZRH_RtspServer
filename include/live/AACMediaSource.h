@@ -12,8 +12,9 @@
 #include "helper/RtspContext.h"
 #include "helper/RingBuffer.h"
 #include "live/MediaSource.h"
-#define MAX_FRAME_SIZE 1024 * 1024
-#define AAC_FRAME_SIZE_FPS 46
+
+
+
 
 class AACMediaSource;
 

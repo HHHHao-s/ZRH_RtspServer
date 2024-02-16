@@ -16,10 +16,6 @@
 
 bool RtspConnection::handleSetup() {
 	
-
-
-
-	
 	 
 	if (sscanf(suffix_, "%*[^/]/%s", track_) == 1) {
 		LOG_INFO("track_:%s", track_);
@@ -316,6 +312,9 @@ int RtspConnection::handleRtspRequest() {
 
 	if (n == -1) {
 		LOG_ERROR("read error");
+		alive_ = false;
+		if (disconnect_cb_)
+			disconnect_cb_(server_, client_fd_);
 		return -1;
 	}
 	else if (n == 0) {

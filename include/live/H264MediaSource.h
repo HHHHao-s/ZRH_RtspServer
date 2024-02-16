@@ -11,8 +11,8 @@
 #include "helper/RtspContext.h"
 #include "helper/RingBuffer.h"
 #include "live/MediaSource.h"
-#define MAX_FRAME_SIZE 1024 * 1024
-#define H264_FRAME_FPS 30
+#define MAX_FRAME_SIZE 640*360
+#define H264_FRAME_FPS 25
 class H264MediaSource;
 
 //void CacheTask(H264MediaSource* t);

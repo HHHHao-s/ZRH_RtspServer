@@ -3,7 +3,7 @@
 
 
 
-AACMediaSource::AACMediaSource(RtspContext* ctx, std::string_view file_name):MediaSource(ctx, file_name,AAC_FRAME_SIZE_FPS), ring_buffer_(MAX_FRAME_SIZE, file_name) {
+AACMediaSource::AACMediaSource(RtspContext* ctx, std::string_view file_name):MediaSource(ctx, file_name,96), ring_buffer_(MAX_BUFFER_SIZE, file_name) {
 
 	for (size_t i = 0; i < max_frame_size_; ++i) {
 		CacheFrame();

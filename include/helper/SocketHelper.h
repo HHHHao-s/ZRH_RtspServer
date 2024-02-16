@@ -22,6 +22,9 @@ int OpenClientUdp(uint16_t* listen_port);
 int Write(int fd, const void* buf, size_t count);
 int SendTo(int fd, const void* buf, size_t count, int flags, const struct sockaddr* addr, socklen_t addrlen);
 int Getsockname(int sockfd, struct sockaddr* addr, socklen_t* addrlen);
+int OpenAcquireClientUdp(uint16_t listen_port);
+void ShowAddress(sockaddr_in* sock_addr);
+int GetPeerName(int sockfd, struct sockaddr* addr, socklen_t* addrlen);
 #else 
 #include <WinSock2.h>
 #include <WS2tcpip.h>

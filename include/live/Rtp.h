@@ -55,7 +55,7 @@ public:
     int SendFrame(RtpPacket *packet);
 
     uint16_t getLocalPort() {
-		return local_port_;
+		return local_rtp_port_;
 	}
     
 
@@ -64,14 +64,16 @@ private:
     int SendPacketOverUdp(RtpPacket* rtpPacket);
     RtspContext * ctx_;
     int sock_fd_;
-  
+    int rtcp_sock_fd_;
 	bool alive_;
 
     uint16_t rtp_channel_;
     std::mutex latch_;
     bool is_tcp_;
     
-    uint16_t remote_port_;
-    uint16_t local_port_;
+    uint16_t remote_rtp_port_;
+    uint16_t remote_rtcp_port_;
+    uint16_t local_rtp_port_;
+    uint16_t local_rtcp_port_;
     sockaddr_storage remote_addr_;
 };

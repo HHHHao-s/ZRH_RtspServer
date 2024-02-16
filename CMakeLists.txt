@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS
-    "-Wall -Werror -lpthread"
+    "-Wall -Werror -lpthread -g"
 )
 add_executable (RstpServer "src/live/RtspServer.cpp" "src/main.cpp" "src/helper/SocketHelper.cpp" "src/live/RtspConnection.cpp" "src/live/Rtp.cpp" "src/live/H264MediaSource.cpp" "src/helper/RingBuffer.cpp" "src/helper/ThreadPool.cpp" "src/helper/Scheduler.cpp" "src/helper/Poller.cpp" "src/helper/Event.cpp" "src/live/MediaSession.cpp" "include/live/MediaSessionManager.h" "src/live/MediaSessionManager.cpp" "include/live/AACMediaSink.h" "include/live/AACMediaSource.h" "src/live/AACMediaSource.cpp" "src/live/AACMediaSink.cpp")
 target_link_libraries(RstpServer pthread)
